@@ -1,6 +1,9 @@
 package card
 
-import "math/rand"
+import (
+	"frontage/pkg"
+	"math/rand"
+)
 
 type Cards []*Card
 
@@ -209,4 +212,12 @@ func (cs *Cards) PushTop(cards Cards) {
 
 func (cs *Cards) PushBottom(cards Cards) {
 	*cs = append(cards, *cs...)
+}
+
+func (cs *Cards) Replace(target *Card) bool {
+	if cs == nil {
+		return false
+	}
+	slice := []*Card(*cs)
+	return pkg.ReplacePtr[Card](slice, target)
 }

@@ -121,3 +121,17 @@ func (b *Board) Entities() [][]entity.Entity {
 func (b *Board) ActivePlayer() *Player {
 	return b.players[0]
 }
+
+func (b *Board) ReplaceEntity(target entity.Entity) bool {
+	if b == nil {
+		return false
+	}
+	return Replace2D[entity.Entity](b.entities, target)
+}
+
+func (b *Board) ReplaceStructure(target structure.Structure) bool {
+	if b == nil {
+		return false
+	}
+	return Replace2D[structure.Structure](b.structures, target)
+}

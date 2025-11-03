@@ -7,11 +7,15 @@ type Entity interface {
 	MP() int
 	ATK() int
 	LegalMoves() []pkg.Point
+	PassiveSkill()
+	ActiveSkill()
 
+	Copy() MutableEntity
+}
+
+type MutableEntity interface {
+	Entity
 	SetHP(int)
 	SetMP(int)
 	SetATK(int)
-
-	PassiveSkill()
-	ActiveSkill()
 }

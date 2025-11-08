@@ -55,7 +55,13 @@ func (p *BasePiece) AttackRanges() []pkg.Point {
 
 func (p *BasePiece) Copy() MutablePiece {
 	return &BasePiece{
-		BaseCard:     BaseCard{p.name, p.resource, p.placed, p.playCost.Copy()},
+		BaseCard: BaseCard{
+			id:       p.id,
+			name:     p.name,
+			resource: p.resource,
+			placed:   p.placed,
+			playCost: p.playCost.Copy(),
+		},
 		legalMoves:   p.legalMoves,
 		attackRanges: p.attackRanges,
 		hp:           p.hp,

@@ -1,6 +1,10 @@
 package card
 
-import "frontage/pkg"
+import (
+	"frontage/pkg"
+
+	"github.com/google/uuid"
+)
 
 type Placed int
 
@@ -23,6 +27,7 @@ const (
 )
 
 type Card interface {
+	Id() uuid.UUID
 	Name() string
 	Resource() string
 	Placed() Placed
@@ -40,14 +45,35 @@ type MutableCard interface {
 }
 
 type BaseCard struct {
+	id       uuid.UUID
 	name     string
 	resource string
 	placed   Placed
 	playCost pkg.Materials
 }
 
+func NewBaseCard(name, resource string, placed Placed, playCost pkg.Materials) *BaseCard {
+	return &BaseCard{
+		id:       uuid.New(),
+		name:     name,
+		resource: resource,
+		placed:   placed,
+		playCost: playCost.Copy(),
+	}
+}
+
 func (b *BaseCard) CardCopy() MutableCard {
-	return &BaseCard{b.name, b.resource, b.placed, b.playCost.Copy()}
+	return &BaseCard{
+		id:       b.id,
+		name:     b.name,
+		resource: b.resource,
+		placed:   b.placed,
+		playCost: b.playCost.Copy(),
+	}
+}
+
+func (b *BaseCard) Id() uuid.UUID {
+	return b.id
 }
 
 func (b *BaseCard) Name() string {

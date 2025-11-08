@@ -56,49 +56,38 @@ func Copy2D[T interface{}](size Size, o [][]T) [][]T {
 	return grid
 }
 
-func Replace[T interface{}](data []T, target T) bool {
+func Replace[T comparable](data []T, target T, value T) bool {
 	for i := range data {
 		if data[i] == target {
-			data[i] = target
+			data[i] = value
 			return true
 		}
 	}
 	return false
 }
 
-func Replace2D[T interface{}](data [][]T, target T) bool {
+func Replace2D[T comparable](data [][]T, target T, value T) bool {
 	for i := range data {
-		if Replace(data[i], target) {
+		if Replace(data[i], target, value) {
 			return true
 		}
 	}
 	return false
 }
 
-func ReplacePtr[T interface{}](data []*T, target *T) bool {
-	for _, current := range data {
-		if current == nil {
-			continue
-		}
-		if target == nil {
-			var zero T
-			if *current == zero {
-				*current = zero
-				return true
-			}
-			continue
-		}
-		if *current == *target {
-			*current = *target
+func ReplacePtr[T interface{}](data []*T, target *T, value *T) bool {
+	for i, current := range data {
+		if current == target {
+			data[i] = value
 			return true
 		}
 	}
 	return false
 }
 
-func Replace2DPtr[T interface{}](data [][]*T, target *T) bool {
+func Replace2DPtr[T interface{}](data [][]*T, target *T, value *T) bool {
 	for _, row := range data {
-		if ReplacePtr(row, target) {
+		if ReplacePtr(row, target, value) {
 			return true
 		}
 	}

@@ -1,7 +1,6 @@
 package event
 
 import (
-	"frontage/pkg/event/action"
 	"reflect"
 )
 
@@ -33,25 +32,4 @@ type BaseWantContext[ContextType interface{}] struct {
 
 func (a *BaseWantContext[ContextType]) WantContext() reflect.Type {
 	return reflect.TypeFor[ContextType]()
-}
-
-type BaseAction[StateType interface{}, ContextType interface{}] struct {
-	BaseWantState[StateType]
-	BaseWantContext[ContextType]
-}
-
-func (a *BaseAction[StateType, ContextType]) Children() []action.EffectAction {
-	return nil
-}
-
-func (a *BaseAction[StateType, ContextType]) CastStateContext(state interface{}, context interface{}) (*StateType, *ContextType, bool) {
-	castedState, ok := state.(StateType)
-	if !ok {
-		return nil, nil, false
-	}
-	castedContext, ok := context.(ContextType)
-	if !ok {
-		return nil, nil, false
-	}
-	return &castedState, &castedContext, true
 }

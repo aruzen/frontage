@@ -1,16 +1,14 @@
-package pkg
-
-import "frontage/pkg/card"
+package model
 
 const DEFAULT_GOD_BLESSING_POINTS = 3
 
 type Player struct {
 	GodBlessing                               int
-	MainDeck, SubDeck, Hand, Graveyard, Extra card.Cards
+	MainDeck, SubDeck, Hand, Graveyard, Extra Cards
 	Materials                                 Materials
 }
 
-func NewPlayer(MainDeck card.Cards, SubDeck card.Cards) *Player {
+func NewPlayer(MainDeck Cards, SubDeck Cards) *Player {
 	return &Player{
 		GodBlessing: DEFAULT_GOD_BLESSING_POINTS,
 		MainDeck:    MainDeck,

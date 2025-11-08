@@ -1,32 +1,32 @@
-package entity
+package entity_action
 
 import (
 	"frontage/internal/event"
 	"frontage/pkg"
-	"frontage/pkg/entity"
-	"frontage/pkg/event/action"
+	"frontage/pkg/logic"
+	"frontage/pkg/model"
 )
 
 type EntitySummonActionState struct {
 	point  pkg.Point
-	entity entity.Entity
+	entity model.Entity
 }
 
 type EntityMoveActionState struct {
 	from, to pkg.Point
-	entity   entity.Entity
+	entity   model.Entity
 }
 
 type EntityAttackActionState struct {
 	point  pkg.Point
-	entity entity.Entity
+	entity model.Entity
 	value  int
 }
 
 type EntitySummonActionContext struct {
 	event.BaseEffectContext
 	Point  pkg.Point
-	Entity entity.Entity
+	Entity model.Entity
 }
 
 type EntityMoveActionContext struct {
@@ -41,29 +41,29 @@ type EntityAttackActionContext struct {
 }
 
 type EntitySummonAction struct {
-	event.BaseAction[EntitySummonActionState, EntitySummonActionContext]
+	logic.BaseAction[EntitySummonActionState, EntitySummonActionContext]
 }
 
 type EntityMoveAction struct {
-	event.BaseAction[EntityMoveActionState, EntityMoveActionContext]
+	logic.BaseAction[EntityMoveActionState, EntityMoveActionContext]
 }
 
 type EntityAttackAction struct {
-	event.BaseAction[EntityAttackActionState, EntityAttackActionContext]
+	logic.BaseAction[EntityAttackActionState, EntityAttackActionContext]
 }
 
 type EntityInvationAction struct {
-	event.BaseAction[EntityAttackActionState, EntityAttackActionContext]
+	logic.BaseAction[EntityAttackActionState, EntityAttackActionContext]
 }
 
-func (e EntitySummonAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (e EntitySummonAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if s, ok := state.(EntitySummonActionState); ok {
 		return EntitySummonActionContext{event.BaseEffectContext{}, s.point, s.entity}
 	}
 	return nil
 }
 
-func (e EntitySummonAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) *pkg.Board {
+func (e EntitySummonAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) *model.Board {
 	_, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return nil
@@ -73,14 +73,14 @@ func (e EntitySummonAction) Solve(board *pkg.Board, state interface{}, context a
 	return board
 }
 
-func (e EntityMoveAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (e EntityMoveAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if s, ok := state.(EntityMoveActionState); ok {
 		return EntitySummonActionContext{event.BaseEffectContext{}, s.to, s.entity}
 	}
 	return nil
 }
 
-func (e EntityMoveAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) *pkg.Board {
+func (e EntityMoveAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) *model.Board {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return nil
@@ -91,14 +91,14 @@ func (e EntityMoveAction) Solve(board *pkg.Board, state interface{}, context act
 	return board
 }
 
-func (e EntityAttackAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (e EntityAttackAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if s, ok := state.(EntityMoveActionState); ok {
 		return EntitySummonActionContext{event.BaseEffectContext{}, s.to, s.entity}
 	}
 	return nil
 }
 
-func (e EntityAttackAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) *pkg.Board {
+func (e EntityAttackAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) *model.Board {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return nil

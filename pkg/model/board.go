@@ -1,9 +1,7 @@
-package pkg
+package model
 
 import (
-	"frontage/pkg/card"
-	"frontage/pkg/entity"
-	"frontage/pkg/structure"
+	"frontage/pkg"
 )
 
 type BoardGenerationStrategy int
@@ -15,7 +13,7 @@ const (
 
 type BoardInfo struct {
 	boardGenerationStrategy BoardGenerationStrategy
-	size                    Size
+	size                    pkg.Size
 }
 
 type Board struct {
@@ -24,11 +22,11 @@ type Board struct {
 	turn             int
 	phase            int
 	players          [2]*Player
-	structures       [][]structure.Structure
-	entities         [][]entity.Entity
+	structures       [][]Structure
+	entities         [][]Entity
 }
 
-func NewBoardInfo(size Size, strategy BoardGenerationStrategy) *BoardInfo {
+func NewBoardInfo(size pkg.Size, strategy BoardGenerationStrategy) *BoardInfo {
 	return &BoardInfo{
 		boardGenerationStrategy: strategy,
 		size:                    size,
@@ -40,12 +38,12 @@ func NewBoard(info *BoardInfo) *Board {
 		info: info,
 		players: [2]*Player{
 			// TODO
-			NewPlayer(make(card.Cards, 0), make(card.Cards, 0)),
-			NewPlayer(make(card.Cards, 0), make(card.Cards, 0)),
+			NewPlayer(make(Cards, 0), make(Cards, 0)),
+			NewPlayer(make(Cards, 0), make(Cards, 0)),
 		},
 		turn:       0,
-		structures: Make2D[structure.Structure](info.size, nil),
-		entities:   Make2D[entity.Entity](info.size, nil),
+		structures: pkg.Make2D[Structure](info.size, nil),
+		entities:   pkg.Make2D[Entity](info.size, nil),
 	}
 }
 
@@ -55,8 +53,8 @@ func (b *Board) Copy() *Board {
 		turn:       b.turn,
 		phase:      b.phase,
 		players:    [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
-		structures: Copy2D(b.info.size, b.structures),
-		entities:   Copy2D(b.info.size, b.entities),
+		structures: pkg.Copy2D(b.info.size, b.structures),
+		entities:   pkg.Copy2D(b.info.size, b.entities),
 	}
 }
 
@@ -77,8 +75,8 @@ func (b *Board) Next() *Board {
 		turn:             b.turn,
 		phase:            b.phase,
 		players:          [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
-		structures:       Copy2D(b.info.size, b.structures),
-		entities:         Copy2D(b.info.size, b.entities),
+		structures:       pkg.Copy2D(b.info.size, b.structures),
+		entities:         pkg.Copy2D(b.info.size, b.entities),
 	}
 
 	if b.info.boardGenerationStrategy == BOARD_GENERATION_STRATEGY_CHAIN || b.beforeGeneration == nil {
@@ -94,7 +92,7 @@ func (b *Board) Info() BoardInfo {
 	return *b.info
 }
 
-func (b *Board) Size() Size {
+func (b *Board) Size() pkg.Size {
 	return b.info.size
 }
 
@@ -110,11 +108,11 @@ func (b *Board) Players() [2]*Player {
 	return b.players
 }
 
-func (b *Board) Structures() [][]structure.Structure {
+func (b *Board) Structures() [][]Structure {
 	return b.structures
 }
 
-func (b *Board) Entities() [][]entity.Entity {
+func (b *Board) Entities() [][]Entity {
 	return b.entities
 }
 
@@ -122,16 +120,16 @@ func (b *Board) ActivePlayer() *Player {
 	return b.players[0]
 }
 
-func (b *Board) ReplaceEntity(target entity.Entity) bool {
+func (b *Board) ReplaceEntity(old Entity, new Entity) bool {
 	if b == nil {
 		return false
 	}
-	return Replace2D[entity.Entity](b.entities, target)
+	return pkg.Replace2D[Entity](b.entities, old, new)
 }
 
-func (b *Board) ReplaceStructure(target structure.Structure) bool {
+func (b *Board) ReplaceStructure(old Structure, new Structure) bool {
 	if b == nil {
 		return false
 	}
-	return Replace2D[structure.Structure](b.structures, target)
+	return pkg.Replace2D[Structure](b.structures, old, new)
 }

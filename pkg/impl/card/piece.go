@@ -1,9 +1,12 @@
 package card
 
-import "frontage/pkg"
+import (
+	"frontage/pkg"
+	"frontage/pkg/model"
+)
 
 type Piece interface {
-	Card
+	model.Card
 	HP() int
 	MP() int
 	ATK() int
@@ -23,14 +26,14 @@ type MutablePiece interface {
 }
 
 type BasePiece struct {
-	BaseCard
+	model.BaseCard
 	legalMoves   []pkg.Point
 	attackRanges []pkg.Point
 	hp, mp, atk  int
 }
 
-func (p *BasePiece) Type() Type {
-	return TYPE_PIECE
+func (p *BasePiece) Type() model.Type {
+	return model.TYPE_PIECE
 }
 
 func (p *BasePiece) HP() int {
@@ -55,13 +58,7 @@ func (p *BasePiece) AttackRanges() []pkg.Point {
 
 func (p *BasePiece) Copy() MutablePiece {
 	return &BasePiece{
-		BaseCard: BaseCard{
-			id:       p.id,
-			name:     p.name,
-			resource: p.resource,
-			placed:   p.placed,
-			playCost: p.playCost.Copy(),
-		},
+		BaseCard:     *p.BaseCard.CardCopy().(*model.BaseCard),
 		legalMoves:   p.legalMoves,
 		attackRanges: p.attackRanges,
 		hp:           p.hp,
@@ -70,8 +67,8 @@ func (p *BasePiece) Copy() MutablePiece {
 	}
 }
 
-func (p *BasePiece) CardCopy() MutableCard {
-	return p.Copy().(MutableCard)
+func (p *BasePiece) CardCopy() model.MutableCard {
+	return p.Copy().(model.MutableCard)
 }
 
 func (p *BasePiece) SetHP(i int) {

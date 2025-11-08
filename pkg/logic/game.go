@@ -1,4 +1,4 @@
-package game
+package logic
 
 type GameStartAction struct{}
 type GameFinishAction struct{}

@@ -1,8 +1,6 @@
-package card
+package model
 
 import (
-	"frontage/pkg"
-
 	"github.com/google/uuid"
 )
 
@@ -32,7 +30,7 @@ type Card interface {
 	Resource() string
 	Placed() Placed
 	Type() Type
-	PlayCost() pkg.Materials
+	PlayCost() Materials
 
 	CardCopy() MutableCard
 }
@@ -41,7 +39,7 @@ type MutableCard interface {
 	Card
 
 	SetPlaced(Placed)
-	SetPlayCost(playCost pkg.Materials)
+	SetPlayCost(playCost Materials)
 }
 
 type BaseCard struct {
@@ -49,10 +47,12 @@ type BaseCard struct {
 	name     string
 	resource string
 	placed   Placed
-	playCost pkg.Materials
+	playCost Materials
 }
 
-func NewBaseCard(name, resource string, placed Placed, playCost pkg.Materials) *BaseCard {
+var _ MutableCard = (*BaseCard)(nil)
+
+func NewBaseCard(name, resource string, placed Placed, playCost Materials) *BaseCard {
 	return &BaseCard{
 		id:       uuid.New(),
 		name:     name,
@@ -88,7 +88,7 @@ func (b *BaseCard) Placed() Placed {
 	return b.placed
 }
 
-func (b *BaseCard) PlayCost() pkg.Materials {
+func (b *BaseCard) PlayCost() Materials {
 	return b.playCost.Copy()
 }
 
@@ -96,7 +96,7 @@ func (b *BaseCard) SetPlaced(placed Placed) {
 	b.placed = placed
 }
 
-func (b *BaseCard) SetPlayCost(playCost pkg.Materials) {
+func (b *BaseCard) SetPlayCost(playCost Materials) {
 	b.playCost = playCost
 }
 

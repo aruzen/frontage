@@ -1,68 +1,24 @@
-package event
+package logic
 
 import (
 	"frontage/pkg"
-	"frontage/pkg/event/action"
+	"frontage/pkg/model"
 	"log/slog"
 	"reflect"
 )
 
+type Listener interface {
+	Listen(es *EventSystem, event Action, state interface{})
+}
+
 type EventSystem struct {
-	Board         *pkg.Board
+	Board         *model.Board
 	Trigger       EffectEvent
 	active        Event
 	ResultEffects []struct {
-		Action  action.Action
-		Context action.EffectContext
+		Action  Action
+		Context EffectContext
 	}
-}
-
-type Event interface {
-	Parent() Event
-	State() interface{}
-	Action() action.Action
-	base() *baseEvent
-}
-
-type baseEvent struct {
-	parent   Event
-	branch   []*EffectEvent
-	modifier *ModifyEvent
-	state    *interface{}
-}
-
-type EffectEvent struct {
-	baseEvent
-	action action.EffectAction
-}
-
-type ModifyEvent struct {
-	baseEvent
-	action action.ModifyAction
-}
-
-func (e *baseEvent) Parent() Event {
-	return e.parent
-}
-
-func (e *baseEvent) State() interface{} {
-	return *e.state
-}
-
-func (e *EffectEvent) Action() action.Action {
-	return e.action
-}
-
-func (e *ModifyEvent) Action() action.Action {
-	return e.action
-}
-
-func (e *EffectEvent) base() *baseEvent {
-	return &e.baseEvent
-}
-
-func (e *ModifyEvent) base() *baseEvent {
-	return &e.baseEvent
 }
 
 func (es *EventSystem) listen(maybe interface{}, event Event) {
@@ -71,29 +27,10 @@ func (es *EventSystem) listen(maybe interface{}, event Event) {
 	}
 }
 
-func NewEvent(a action.Action, state *interface{}) Event {
-	if effect, ok := a.(action.EffectAction); ok {
-		return &EffectEvent{
-			baseEvent: baseEvent{
-				state: state,
-			},
-			action: effect,
-		}
-	} else if modifier, ok := a.(action.ModifyAction); ok {
-		return &ModifyEvent{
-			baseEvent: baseEvent{
-				state: state,
-			},
-			action: modifier,
-		}
-	}
-	return nil
-}
-
 func (es *EventSystem) Emit(event Event) {
 	es.active = event
 	players := es.Board.Players()
-	for i, _ := range players {
+	for i := range players {
 		es.listen(players[(i+es.Board.Turn())%len(players)], event)
 	}
 
@@ -120,10 +57,10 @@ func (es *EventSystem) Emit(event Event) {
 		}
 	}
 
-	if multi, ok := event.Action().(action.MultiEffectAction); ok {
+	if multi, ok := event.Action().(MultiEffectAction); ok {
 		effects := multi.SubEffects(event.State())
 		events := make([]Event, len(effects))
-		for i, _ := range effects {
+		for i := range effects {
 			events[i] = &effects[i]
 		}
 		es.ChainLine(events[0], events[1:])
@@ -171,7 +108,7 @@ func (es *EventSystem) ChainLine(event Event, pending []Event) {
 	}
 }
 
-func IntegrityCheck(a action.Action, state interface{}) bool {
+func IntegrityCheck(a Action, state interface{}) bool {
 	if a == nil {
 		return false
 	}
@@ -185,7 +122,7 @@ func (es *EventSystem) Resolve() {
 
 }
 
-func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect action.EffectAction, beforeContext action.EffectContext) {
+func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, beforeContext EffectContext) {
 	if !IntegrityCheck(e.Action(), e.State()) {
 		slog.Warn("IntegrityCheck failed.")
 		return
@@ -203,13 +140,13 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect action.EffectAction,
 	}
 	if !context.IsCanceled() {
 		es.ResultEffects = append(es.ResultEffects, struct {
-			Action  action.Action
-			Context action.EffectContext
+			Action  Action
+			Context EffectContext
 		}{Action: e.action, Context: context})
 	}
 }
 
-func (e *ModifyEvent) Resolve(es *EventSystem, effect action.EffectAction, context action.EffectContext) action.EffectContext {
+func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context EffectContext) EffectContext {
 	if !IntegrityCheck(e.action, *e.state) {
 		slog.Warn("IntegrityCheck failed.")
 		return nil

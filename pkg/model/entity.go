@@ -1,9 +1,7 @@
-package entity
+package model
 
 import (
 	"frontage/pkg"
-	"frontage/pkg/skill"
-
 	"github.com/google/uuid"
 )
 
@@ -13,10 +11,10 @@ type Entity interface {
 	HP() int
 	MP() int
 	ATK() int
-	Owner() *pkg.Player
+	Owner() *Player
 
-	HaveSkill(s skill.NamedSkill) bool
-	Skills() []skill.Skill
+	HaveSkill(s NamedSkill) bool
+	Skills() []Skill
 	LegalMoves() []pkg.Point
 	AttackRanges() []pkg.Point
 
@@ -26,9 +24,9 @@ type Entity interface {
 type MutableEntity interface {
 	Entity
 
-	GetSkill(s pkg.LocalizeTag) (skill.NamedSkill, bool)
-	AddSkill(s skill.Skill)
-	RemoveSkill(s skill.Skill)
+	GetSkill(s pkg.LocalizeTag) (NamedSkill, bool)
+	AddSkill(s Skill)
+	RemoveSkill(s Skill)
 	SetHP(int)
 	SetMP(int)
 	SetATK(int)
@@ -43,16 +41,16 @@ type BaseEntity struct {
 	hp       int
 	mp       int
 	atk      int
-	owner    *pkg.Player
+	owner    *Player
 
-	skills       []skill.Skill
+	skills       []Skill
 	legalMoves   []pkg.Point
 	attackRanges []pkg.Point
 }
 
 var _ MutableEntity = (*BaseEntity)(nil)
 
-func NewBaseEntity(owner *pkg.Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...skill.Skill) *BaseEntity {
+func NewBaseEntity(owner *Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BaseEntity {
 	entity := &BaseEntity{
 		id:           uuid.New(),
 		owner:        owner,
@@ -64,7 +62,7 @@ func NewBaseEntity(owner *pkg.Player, pos pkg.Point, hp, mp, atk int, legalMoves
 		attackRanges: append([]pkg.Point(nil), attackRanges...),
 	}
 	if len(skills) > 0 {
-		entity.skills = append([]skill.Skill(nil), skills...)
+		entity.skills = append([]Skill(nil), skills...)
 	}
 	return entity
 }
@@ -89,11 +87,11 @@ func (e *BaseEntity) ATK() int {
 	return e.atk
 }
 
-func (e *BaseEntity) Owner() *pkg.Player {
+func (e *BaseEntity) Owner() *Player {
 	return e.owner
 }
 
-func (e *BaseEntity) HaveSkill(s skill.NamedSkill) bool {
+func (e *BaseEntity) HaveSkill(s NamedSkill) bool {
 	if s == nil {
 		return false
 	}
@@ -101,8 +99,8 @@ func (e *BaseEntity) HaveSkill(s skill.NamedSkill) bool {
 	return ok
 }
 
-func (e *BaseEntity) Skills() []skill.Skill {
-	result := make([]skill.Skill, len(e.skills))
+func (e *BaseEntity) Skills() []Skill {
+	result := make([]Skill, len(e.skills))
 	copy(result, e.skills)
 	return result
 }
@@ -122,7 +120,7 @@ func (e *BaseEntity) AttackRanges() []pkg.Point {
 }
 
 func (e *BaseEntity) Copy() MutableEntity {
-	copySkills := make([]skill.Skill, len(e.skills))
+	copySkills := make([]Skill, len(e.skills))
 	copy(copySkills, e.skills)
 	return &BaseEntity{
 		id:           e.id,
@@ -137,23 +135,23 @@ func (e *BaseEntity) Copy() MutableEntity {
 	}
 }
 
-func (e *BaseEntity) GetSkill(tag pkg.LocalizeTag) (skill.NamedSkill, bool) {
+func (e *BaseEntity) GetSkill(tag pkg.LocalizeTag) (NamedSkill, bool) {
 	for _, sk := range e.skills {
-		if named, ok := sk.(skill.NamedSkill); ok && named.Name() == tag {
+		if named, ok := sk.(NamedSkill); ok && named.Name() == tag {
 			return named, true
 		}
 	}
 	return nil, false
 }
 
-func (e *BaseEntity) AddSkill(s skill.Skill) {
+func (e *BaseEntity) AddSkill(s Skill) {
 	if s == nil {
 		return
 	}
 	e.skills = append(e.skills, s)
 }
 
-func (e *BaseEntity) RemoveSkill(target skill.Skill) {
+func (e *BaseEntity) RemoveSkill(target Skill) {
 	for i, sk := range e.skills {
 		if sk == target {
 			e.skills = append(e.skills[:i], e.skills[i+1:]...)

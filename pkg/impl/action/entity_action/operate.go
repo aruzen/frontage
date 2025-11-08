@@ -1,15 +1,14 @@
-package entity
+package entity_action
 
 import (
 	"frontage/internal/event"
-	"frontage/pkg"
-	"frontage/pkg/entity"
-	"frontage/pkg/event/action"
+	"frontage/pkg/logic"
+	"frontage/pkg/model"
 	"log/slog"
 )
 
 type EntityOperateActionState struct {
-	entity entity.MutableEntity
+	entity model.MutableEntity
 	value  int
 }
 
@@ -29,15 +28,15 @@ type EntityATKContext struct {
 }
 
 type baseEntityHPAction struct {
-	event.BaseAction[EntityOperateActionState, EntityHPContext]
+	logic.BaseAction[EntityOperateActionState, EntityHPContext]
 }
 
 type baseEntityMPAction struct {
-	event.BaseAction[EntityOperateActionState, EntityMPContext]
+	logic.BaseAction[EntityOperateActionState, EntityMPContext]
 }
 
 type baseEntityATKAction struct {
-	event.BaseAction[EntityOperateActionState, EntityATKContext]
+	logic.BaseAction[EntityOperateActionState, EntityATKContext]
 }
 
 type EntityHPIncreaseAction struct{ baseEntityHPAction }
@@ -58,7 +57,7 @@ type EntityATKDecreaseAction struct{ baseEntityATKAction }
 
 type EntityATKFixAction struct{ baseEntityATKAction }
 
-func (e EntityOperateActionState) Entity() entity.MutableEntity {
+func (e EntityOperateActionState) Entity() model.MutableEntity {
 	return e.entity
 }
 
@@ -66,7 +65,7 @@ func (e EntityOperateActionState) Value() int {
 	return e.value
 }
 
-func (b baseEntityHPAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (b baseEntityHPAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if entityState, ok := state.(EntityOperateActionState); ok {
 		return EntityHPContext{event.NewBaseEffectContext(), entityState.value}
 	}
@@ -74,28 +73,28 @@ func (b baseEntityHPAction) Act(state interface{}, beforeContext action.EffectCo
 	return nil
 }
 
-func (e EntityHPIncreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityHPIncreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, hpContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetHP(entityState.entity.HP() + hpContext.Value)
 	}
 }
 
-func (e EntityHPDecreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityHPDecreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, hpContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetHP(entityState.entity.HP() - hpContext.Value)
 	}
 }
 
-func (e EntityHPFixAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityHPFixAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, hpContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetHP(hpContext.Value)
 	}
 }
 
-func (b baseEntityMPAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (b baseEntityMPAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if entityState, ok := state.(EntityOperateActionState); ok {
 		return EntityMPContext{event.NewBaseEffectContext(), entityState.value}
 	}
@@ -103,28 +102,28 @@ func (b baseEntityMPAction) Act(state interface{}, beforeContext action.EffectCo
 	return nil
 }
 
-func (e EntityMPIncreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityMPIncreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, mpContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetMP(entityState.entity.MP() + mpContext.Value)
 	}
 }
 
-func (e EntityMPDecreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityMPDecreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, mpContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetMP(entityState.entity.MP() - mpContext.Value)
 	}
 }
 
-func (e EntityMPFixAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityMPFixAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, mpContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetMP(mpContext.Value)
 	}
 }
 
-func (b baseEntityATKAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (b baseEntityATKAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if entityState, ok := state.(EntityOperateActionState); ok {
 		return EntityATKContext{event.NewBaseEffectContext(), entityState.value}
 	}
@@ -132,21 +131,21 @@ func (b baseEntityATKAction) Act(state interface{}, beforeContext action.EffectC
 	return nil
 }
 
-func (e EntityATKIncreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityATKIncreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, atkContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetATK(entityState.entity.ATK() + atkContext.Value)
 	}
 }
 
-func (e EntityATKDecreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityATKDecreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, atkContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetATK(entityState.entity.ATK() - atkContext.Value)
 	}
 }
 
-func (e EntityATKFixAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (e EntityATKFixAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	entityState, atkContext, ok := e.CastStateContext(state, context)
 	if ok {
 		entityState.entity.SetATK(atkContext.Value)

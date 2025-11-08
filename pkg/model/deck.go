@@ -1,4 +1,4 @@
-package card
+package model
 
 import (
 	"frontage/pkg"
@@ -214,10 +214,10 @@ func (cs *Cards) PushBottom(cards Cards) {
 	*cs = append(cards, *cs...)
 }
 
-func (cs *Cards) Replace(target *Card) bool {
+func (cs *Cards) Replace(target *Card, value *Card) bool {
 	if cs == nil {
 		return false
 	}
 	slice := []*Card(*cs)
-	return pkg.ReplacePtr[Card](slice, target)
+	return pkg.ReplacePtr[Card](slice, target, value)
 }

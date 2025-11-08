@@ -1,10 +1,10 @@
-package card
+package card_action
 
 import (
 	"frontage/internal/event"
-	"frontage/pkg"
-	"frontage/pkg/card"
-	"frontage/pkg/event/action"
+	"frontage/pkg/impl/card"
+	"frontage/pkg/logic"
+	"frontage/pkg/model"
 	"log/slog"
 )
 
@@ -29,15 +29,15 @@ type PieceATKContext struct {
 }
 
 type baseHPAction struct {
-	event.BaseAction[PieceActionState, PieceHPContext]
+	logic.BaseAction[PieceActionState, PieceHPContext]
 }
 
 type baseMPAction struct {
-	event.BaseAction[PieceActionState, PieceMPContext]
+	logic.BaseAction[PieceActionState, PieceMPContext]
 }
 
 type baseATKAction struct {
-	event.BaseAction[PieceActionState, PieceATKContext]
+	logic.BaseAction[PieceActionState, PieceATKContext]
 }
 
 type PieceHPIncreaseAction struct{ baseHPAction }
@@ -66,7 +66,7 @@ func (p PieceActionState) Value() int {
 	return p.value
 }
 
-func (p baseHPAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (p baseHPAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if PieceState, ok := state.(PieceActionState); ok {
 		return PieceHPContext{event.NewBaseEffectContext(), PieceState.value}
 	}
@@ -74,28 +74,28 @@ func (p baseHPAction) Act(state interface{}, beforeContext action.EffectContext)
 	return nil
 }
 
-func (p PieceHPIncreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceHPIncreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, hpContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetHP(PieceState.card.HP() + hpContext.Value)
 	}
 }
 
-func (p PieceHPDecreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceHPDecreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, hpContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetHP(PieceState.card.HP() - hpContext.Value)
 	}
 }
 
-func (p PieceHPFixAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceHPFixAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, hpContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetHP(hpContext.Value)
 	}
 }
 
-func (p baseMPAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (p baseMPAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if PieceState, ok := state.(PieceActionState); ok {
 		return PieceMPContext{event.NewBaseEffectContext(), PieceState.value}
 	}
@@ -103,28 +103,28 @@ func (p baseMPAction) Act(state interface{}, beforeContext action.EffectContext)
 	return nil
 }
 
-func (p PieceMPIncreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceMPIncreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, mpContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetMP(PieceState.card.MP() + mpContext.Value)
 	}
 }
 
-func (p PieceMPDecreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceMPDecreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, mpContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetMP(PieceState.card.MP() - mpContext.Value)
 	}
 }
 
-func (p PieceMPFixAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceMPFixAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, mpContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetATK(mpContext.Value)
 	}
 }
 
-func (p baseATKAction) Act(state interface{}, beforeContext action.EffectContext) action.EffectContext {
+func (p baseATKAction) Act(state interface{}, beforeContext logic.EffectContext) logic.EffectContext {
 	if PieceState, ok := state.(PieceActionState); ok {
 		return PieceATKContext{event.NewBaseEffectContext(), PieceState.value}
 	}
@@ -132,21 +132,21 @@ func (p baseATKAction) Act(state interface{}, beforeContext action.EffectContext
 	return nil
 }
 
-func (p PieceATKIncreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceATKIncreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, atkContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetATK(PieceState.card.ATK() + atkContext.Value)
 	}
 }
 
-func (p PieceATKDecreaseAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceATKDecreaseAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, atkContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetATK(PieceState.card.ATK() - atkContext.Value)
 	}
 }
 
-func (p PieceATKFixAction) Solve(board *pkg.Board, state interface{}, context action.EffectContext) {
+func (p PieceATKFixAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) {
 	PieceState, atkContext, ok := p.CastStateContext(state, context)
 	if ok {
 		PieceState.card.SetATK(atkContext.Value)

@@ -1,4 +1,4 @@
-package structure
+package model
 
 type Structure interface {
 }

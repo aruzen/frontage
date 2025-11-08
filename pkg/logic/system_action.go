@@ -1,4 +1,4 @@
-package game
+package logic
 
 type PlayerWinAction struct{}
 type PlayerLoseAction struct{}

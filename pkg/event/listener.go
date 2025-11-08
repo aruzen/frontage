@@ -5,5 +5,5 @@ import (
 )
 
 type Listener interface {
-	Listen(event action.Action, state interface{})
+	Listen(es *EventSystem, event action.Action, state interface{})
 }

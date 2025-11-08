@@ -33,6 +33,7 @@ type Card interface {
 	PlayCost() Materials
 
 	CardCopy() MutableCard
+	Mirror() MutableCard
 }
 
 type MutableCard interface {
@@ -70,6 +71,12 @@ func (b *BaseCard) CardCopy() MutableCard {
 		placed:   b.placed,
 		playCost: b.playCost.Copy(),
 	}
+}
+
+func (b *BaseCard) Mirror() MutableCard {
+	copy := b.CardCopy().(*BaseCard)
+	copy.id = uuid.New()
+	return copy
 }
 
 func (b *BaseCard) Id() uuid.UUID {

@@ -19,6 +19,7 @@ type Entity interface {
 	AttackRanges() []pkg.Point
 
 	Copy() MutableEntity
+	Mirror() MutableEntity
 }
 
 type MutableEntity interface {
@@ -133,6 +134,12 @@ func (e *BaseEntity) Copy() MutableEntity {
 		attackRanges: append([]pkg.Point(nil), e.attackRanges...),
 		skills:       copySkills,
 	}
+}
+
+func (e *BaseEntity) Mirror() MutableEntity {
+	copy := e.Copy().(*BaseEntity)
+	copy.id = uuid.New()
+	return copy
 }
 
 func (e *BaseEntity) GetSkill(tag pkg.LocalizeTag) (NamedSkill, bool) {

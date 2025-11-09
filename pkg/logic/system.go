@@ -13,7 +13,7 @@ type Listener interface {
 
 type EventSystem struct {
 	Board         *model.Board
-	Trigger       EffectEvent
+	Trigger       *EffectEvent
 	active        Event
 	ResultEffects []struct {
 		Action  Action
@@ -21,17 +21,17 @@ type EventSystem struct {
 	}
 }
 
-func (es *EventSystem) listen(maybe interface{}, event Event) {
+func (es *EventSystem) ListenHelper(maybe interface{}, action Action, state interface{}) {
 	if listener, ok := maybe.(Listener); ok {
-		listener.Listen(es, event.Action(), event.State())
+		listener.Listen(es, action, state)
 	}
 }
 
-func (es *EventSystem) Emit(event Event) {
+func (es *EventSystem) transmission(event Event) {
 	es.active = event
 	players := es.Board.Players()
 	for i := range players {
-		es.listen(players[(i+es.Board.Turn())%len(players)], event)
+		es.ListenHelper(players[(i+es.Board.Turn())%len(players)], event.Action(), event.State())
 	}
 
 	var searchStart, searchEnd, delta pkg.Point
@@ -47,13 +47,13 @@ func (es *EventSystem) Emit(event Event) {
 
 	for x := searchStart.X; x != searchEnd.X+delta.X; x += delta.X {
 		for y := searchStart.Y; y != searchEnd.Y+delta.Y; y += delta.Y {
-			es.listen(es.Board.Entities()[x][y], event)
+			es.ListenHelper(es.Board.Entities()[x][y], event.Action(), event.State())
 		}
 	}
 
 	for x := searchStart.X; x != searchEnd.X+delta.X; x += delta.X {
 		for y := searchStart.Y; y != searchEnd.Y+delta.Y; y += delta.Y {
-			es.listen(es.Board.Structures()[x][y], event)
+			es.ListenHelper(es.Board.Structures()[x][y], event.Action(), event.State())
 		}
 	}
 
@@ -61,10 +61,15 @@ func (es *EventSystem) Emit(event Event) {
 		effects := multi.SubEffects(event.State())
 		events := make([]Event, len(effects))
 		for i := range effects {
-			events[i] = &effects[i]
+			events[i] = effects[i]
 		}
-		es.ChainLine(events[0], events[1:])
+		es.ChainLine(events[0], events[1:]...)
 	}
+}
+
+func (es *EventSystem) Emit(event *EffectEvent) {
+	es.Trigger = event
+	es.transmission(event)
 }
 
 func (es *EventSystem) Chain(event Event) {
@@ -85,10 +90,10 @@ func (es *EventSystem) Chain(event Event) {
 		}
 		m.modifier = modifier
 	}
-	es.Emit(event)
+	es.transmission(event)
 }
 
-func (es *EventSystem) ChainLine(event Event, pending []Event) {
+func (es *EventSystem) ChainLine(event Event, pending ...Event) {
 	prevActive := es.active
 	defer func() { es.active = prevActive }()
 	base := event.base()
@@ -102,9 +107,9 @@ func (es *EventSystem) ChainLine(event Event, pending []Event) {
 		}
 		m.modifier = modifier
 	}
-	es.Emit(event)
+	es.transmission(event)
 	if pending != nil && len(pending) > 0 {
-		es.ChainLine(pending[0], pending[1:])
+		es.ChainLine(pending[0], pending[1:]...)
 	}
 }
 
@@ -116,48 +121,4 @@ func IntegrityCheck(a Action, state interface{}) bool {
 		return false
 	}
 	return true
-}
-
-func (es *EventSystem) Resolve() {
-
-}
-
-func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, beforeContext EffectContext) {
-	if !IntegrityCheck(e.Action(), e.State()) {
-		slog.Warn("IntegrityCheck failed.")
-		return
-	}
-	context := e.action.Act(e.State(), beforeEffect, beforeContext)
-	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
-		context = e.modifier.Resolve(es, e.action, context)
-	}
-	for _, branch := range e.branch {
-		if !IntegrityCheck(branch.action, *branch.state) {
-			slog.Warn("IntegrityCheck failed.")
-			continue
-		}
-		branch.Resolve(es, e.action, context)
-	}
-	if !context.IsCanceled() {
-		es.ResultEffects = append(es.ResultEffects, struct {
-			Action  Action
-			Context EffectContext
-		}{Action: e.action, Context: context})
-	}
-}
-
-func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context EffectContext) EffectContext {
-	if !IntegrityCheck(e.action, *e.state) {
-		slog.Warn("IntegrityCheck failed.")
-		return nil
-	}
-	context = e.action.Modify(*e.state, context)
-	for _, branch := range e.branch {
-		if !IntegrityCheck(branch.action, *branch.state) {
-			slog.Warn("IntegrityCheck failed.")
-			continue
-		}
-		branch.Resolve(es, effect, context)
-	}
-	return context
 }

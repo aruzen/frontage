@@ -69,7 +69,9 @@ func (e EntitySummonAction) Solve(board *model.Board, state interface{}, context
 		return nil
 	}
 	board = board.Next()
-	board.Entities()[c.Point.X][c.Point.Y] = c.Entity
+	if !board.SetEntity(c.Point, c.Entity) {
+		return nil
+	}
 	return board
 }
 
@@ -86,8 +88,16 @@ func (e EntityMoveAction) Solve(board *model.Board, state interface{}, context l
 		return nil
 	}
 	board = board.Next()
-	board.Entities()[c.Point.X][c.Point.Y] = board.Entities()[s.from.X][s.from.Y]
-	board.Entities()[s.from.X][s.from.Y] = nil
+	moving := board.Entities()[s.from.X][s.from.Y]
+	if moving == nil {
+		return nil
+	}
+	if !board.RemoveEntity(s.from) {
+		return nil
+	}
+	if !board.SetEntity(c.Point, moving) {
+		return nil
+	}
 	return board
 }
 

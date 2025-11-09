@@ -27,6 +27,11 @@ type ModifyAction interface {
 	Modify(state interface{}, context EffectContext) EffectContext
 }
 
+type MultiEffectAction interface {
+	Action
+	SubEffects(state interface{}) []*EffectEvent
+}
+
 type BaseAction[StateType any, ContextType any] struct {
 	event_base.BaseWantState[StateType]
 	event_base.BaseWantContext[ContextType]

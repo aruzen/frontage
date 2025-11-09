@@ -20,14 +20,14 @@ func (b BaseEffectContext) Cancel() {
 	b.canceled = true
 }
 
-type BaseWantState[StateType interface{}] struct {
+type BaseWantState[StateType any] struct {
 }
 
 func (a *BaseWantState[StateType]) WantState() reflect.Type {
 	return reflect.TypeFor[StateType]()
 }
 
-type BaseWantContext[ContextType interface{}] struct {
+type BaseWantContext[ContextType any] struct {
 }
 
 func (a *BaseWantContext[ContextType]) WantContext() reflect.Type {

@@ -2,6 +2,7 @@ package model
 
 import (
 	"frontage/pkg"
+	"github.com/google/uuid"
 )
 
 type BoardGenerationStrategy int
@@ -23,7 +24,9 @@ type Board struct {
 	phase            int
 	players          [2]*Player
 	structures       [][]Structure
+	structureTable   map[uuid.UUID]pkg.Point
 	entities         [][]Entity
+	entityTable      map[uuid.UUID]pkg.Point
 }
 
 func NewBoardInfo(size pkg.Size, strategy BoardGenerationStrategy) *BoardInfo {
@@ -41,21 +44,37 @@ func NewBoard(info *BoardInfo) *Board {
 			NewPlayer(make(Cards, 0), make(Cards, 0)),
 			NewPlayer(make(Cards, 0), make(Cards, 0)),
 		},
-		turn:       0,
-		structures: pkg.Make2D[Structure](info.size, nil),
-		entities:   pkg.Make2D[Entity](info.size, nil),
+		turn:           0,
+		structures:     pkg.Make2D[Structure](info.size, nil),
+		structureTable: map[uuid.UUID]pkg.Point{},
+		entities:       pkg.Make2D[Entity](info.size, nil),
+		entityTable:    map[uuid.UUID]pkg.Point{},
 	}
 }
 
 func (b *Board) Copy() *Board {
 	return &Board{
-		info:       b.info,
-		turn:       b.turn,
-		phase:      b.phase,
-		players:    [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
-		structures: pkg.Copy2D(b.info.size, b.structures),
-		entities:   pkg.Copy2D(b.info.size, b.entities),
+		info:           b.info,
+		turn:           b.turn,
+		phase:          b.phase,
+		players:        [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
+		structures:     pkg.Copy2D(b.info.size, b.structures),
+		structureTable: pkg.CopyMap(b.structureTable),
+		entities:       pkg.Copy2D(b.info.size, b.entities),
+		entityTable:    pkg.CopyMap(b.entityTable),
 	}
+}
+
+func (b *Board) Overwrite(src *Board) {
+	b.info = src.info
+	b.turn = src.turn
+	b.phase = src.phase
+	b.players[0] = src.players[0].Copy()
+	b.players[1] = src.players[1].Copy()
+	pkg.Overwrite2D(b.entities, src.entities)
+	b.entityTable = pkg.CopyMap(src.entityTable)
+	pkg.Overwrite2D(b.structures, src.structures)
+	b.structureTable = pkg.CopyMap(src.structureTable)
 }
 
 func (b *Board) Sandbox() *Board {
@@ -69,21 +88,22 @@ func (b *Board) Sandbox() *Board {
 }
 
 func (b *Board) Next() *Board {
-	newBoard := Board{
-		info:             b.info,
-		beforeGeneration: b,
-		turn:             b.turn,
-		phase:            b.phase,
-		players:          [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
-		structures:       pkg.Copy2D(b.info.size, b.structures),
-		entities:         pkg.Copy2D(b.info.size, b.entities),
-	}
-
 	if b.info.boardGenerationStrategy == BOARD_GENERATION_STRATEGY_CHAIN || b.beforeGeneration == nil {
-		return &newBoard
+		return &Board{
+			info:             b.info,
+			beforeGeneration: b,
+			turn:             b.turn,
+			phase:            b.phase,
+			players:          [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
+			structures:       pkg.Copy2D(b.info.size, b.structures),
+			entities:         pkg.Copy2D(b.info.size, b.entities),
+		}
 	} else if b.info.boardGenerationStrategy == BOARD_GENERATION_STRATEGY_SWAP {
-		*b.beforeGeneration = newBoard
-		return b.beforeGeneration
+		result := b.beforeGeneration
+		result.Overwrite(b)
+		result.beforeGeneration = b
+		b.beforeGeneration = nil
+		return result
 	}
 	return nil
 }

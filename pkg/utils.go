@@ -1,5 +1,7 @@
 package pkg
 
+import "log/slog"
+
 type Size struct {
 	Width  int
 	Height int
@@ -32,7 +34,7 @@ func PointToSize(s Point) Size {
 	}
 }
 
-func Make2D[T interface{}](size Size, init T) [][]T {
+func Make2D[T any](size Size, init T) [][]T {
 	data := make([]T, size.Height*size.Width)
 	grid := make([][]T, size.Width)
 	for i := range grid {
@@ -44,7 +46,7 @@ func Make2D[T interface{}](size Size, init T) [][]T {
 	return grid
 }
 
-func Copy2D[T interface{}](size Size, o [][]T) [][]T {
+func Copy2D[T any](size Size, o [][]T) [][]T {
 	data := make([]T, size.Height*size.Width)
 	grid := make([][]T, size.Width)
 	for i := range grid {
@@ -75,7 +77,7 @@ func Replace2D[T comparable](data [][]T, target T, value T) bool {
 	return false
 }
 
-func ReplacePtr[T interface{}](data []*T, target *T, value *T) bool {
+func ReplacePtr[T any](data []*T, target *T, value *T) bool {
 	for i, current := range data {
 		if current == target {
 			data[i] = value
@@ -85,11 +87,43 @@ func ReplacePtr[T interface{}](data []*T, target *T, value *T) bool {
 	return false
 }
 
-func Replace2DPtr[T interface{}](data [][]*T, target *T, value *T) bool {
+func Replace2DPtr[T any](data [][]*T, target *T, value *T) bool {
 	for _, row := range data {
 		if ReplacePtr(row, target, value) {
 			return true
 		}
 	}
 	return false
+}
+
+func Overwrite[T any](dist, src []T) {
+	if len(dist) != len(src) {
+		slog.Warn("len(dist) != len(src)", "src", len(src), "dist", len(dist))
+		for i := 0; i < min(len(dist), len(src)); i++ {
+			(dist)[i] = src[i]
+		}
+	} else {
+		copy(dist, src)
+	}
+}
+
+func Overwrite2D[T any](dist [][]T, src [][]T) {
+	if len(dist) != len(src) {
+		slog.Warn("len(dist) != len(src)", "src", len(src), "dist", len(dist))
+		for i := 0; i < min(len(dist), len(src)); i++ {
+			Overwrite(dist[i], src[i])
+		}
+	} else {
+		for i := range dist {
+			Overwrite(dist[i], src[i])
+		}
+	}
+}
+
+func CopyMap[K comparable, V any](v map[K]V) map[K]V {
+	m := make(map[K]V)
+	for key, value := range v {
+		m[key] = value
+	}
+	return m
 }

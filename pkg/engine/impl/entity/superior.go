@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"frontage/pkg/model"
+	"frontage/pkg/engine/model"
 )
 
 type Superior struct {

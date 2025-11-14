@@ -1,19 +1,20 @@
 package model
 
 import (
-	"frontage/pkg"
+	"frontage/pkg/engine"
 	"github.com/google/uuid"
 )
 
-type BoardGenerationStrategy int
+type GenerationStrategy int
 
 const (
-	BOARD_GENERATION_STRATEGY_SWAP BoardGenerationStrategy = iota
-	BOARD_GENERATION_STRATEGY_CHAIN
+	GENERATION_STRATEGY_SWAP GenerationStrategy = iota
+	GENERATION_STRATEGY_CHAIN
+	//	GENERATION_STRATEGY_MYSELF
 )
 
 type BoardInfo struct {
-	boardGenerationStrategy BoardGenerationStrategy
+	boardGenerationStrategy GenerationStrategy
 	size                    pkg.Size
 }
 
@@ -29,7 +30,7 @@ type Board struct {
 	entityTable      map[uuid.UUID]pkg.Point
 }
 
-func NewBoardInfo(size pkg.Size, strategy BoardGenerationStrategy) *BoardInfo {
+func NewBoardInfo(size pkg.Size, strategy GenerationStrategy) *BoardInfo {
 	return &BoardInfo{
 		boardGenerationStrategy: strategy,
 		size:                    size,
@@ -80,7 +81,7 @@ func (b *Board) Overwrite(src *Board) {
 func (b *Board) Sandbox() *Board {
 	result := b.Copy()
 	result.info = &BoardInfo{
-		BOARD_GENERATION_STRATEGY_CHAIN,
+		GENERATION_STRATEGY_CHAIN,
 		b.info.size,
 	}
 
@@ -88,7 +89,7 @@ func (b *Board) Sandbox() *Board {
 }
 
 func (b *Board) Next() *Board {
-	if b.info.boardGenerationStrategy == BOARD_GENERATION_STRATEGY_CHAIN || b.beforeGeneration == nil {
+	if b.info.boardGenerationStrategy == GENERATION_STRATEGY_CHAIN || b.beforeGeneration == nil {
 		return &Board{
 			info:             b.info,
 			beforeGeneration: b,
@@ -100,7 +101,7 @@ func (b *Board) Next() *Board {
 			entities:         pkg.Copy2D(b.info.size, b.entities),
 			entityTable:      pkg.CopyMap(b.entityTable),
 		}
-	} else if b.info.boardGenerationStrategy == BOARD_GENERATION_STRATEGY_SWAP {
+	} else if b.info.boardGenerationStrategy == GENERATION_STRATEGY_SWAP {
 		result := b.beforeGeneration
 		result.Overwrite(b)
 		result.beforeGeneration = b
@@ -203,6 +204,7 @@ func (b *Board) RemoveStructure(pos pkg.Point) bool {
 	return b.SetStructure(pos, nil)
 }
 
+// SetEntity Move操作について, 元々配置されているEntity(UUIDで判別)がSetされる時元いた位置にnilを代入する
 func (b *Board) SetEntity(pos pkg.Point, entity Entity) bool {
 	if b == nil || !b.inBounds(pos) {
 		return false

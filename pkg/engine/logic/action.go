@@ -2,7 +2,7 @@ package logic
 
 import (
 	event_base "frontage/internal/event"
-	"frontage/pkg/model"
+	"frontage/pkg/engine/model"
 	"reflect"
 )
 

@@ -66,3 +66,21 @@ func NewEvent(a Action, state *interface{}) Event {
 	}
 	return nil
 }
+
+func NewEffectEvent(a EffectAction, state *interface{}) *EffectEvent {
+	return &EffectEvent{
+		baseEvent: baseEvent{
+			state: state,
+		},
+		action: a,
+	}
+}
+
+func NewModifyEvent(a ModifyAction, state *interface{}) *ModifyEvent {
+	return &ModifyEvent{
+		baseEvent: baseEvent{
+			state: state,
+		},
+		action: a,
+	}
+}

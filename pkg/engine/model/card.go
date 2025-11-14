@@ -74,9 +74,9 @@ func (b *BaseCard) CardCopy() MutableCard {
 }
 
 func (b *BaseCard) Mirror() MutableCard {
-	copy := b.CardCopy().(*BaseCard)
-	copy.id = uuid.New()
-	return copy
+	copied := b.CardCopy().(*BaseCard)
+	copied.id = uuid.New()
+	return copied
 }
 
 func (b *BaseCard) Id() uuid.UUID {

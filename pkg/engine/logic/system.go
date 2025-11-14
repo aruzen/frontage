@@ -1,37 +1,48 @@
 package logic
 
 import (
-	"frontage/pkg"
-	"frontage/pkg/model"
+	"frontage/pkg/engine"
+	"frontage/pkg/engine/model"
 	"log/slog"
 	"reflect"
 )
 
-type Listener interface {
-	Listen(es *EventSystem, event Action, state interface{})
+type PreListener interface {
+	PreListen(es *EventSystem, event Action, state interface{})
+}
+
+type RunningListener interface {
+	RunningListen(es *EventSystem, event Action, state interface{})
 }
 
 type EventSystem struct {
-	Board         *model.Board
-	Trigger       *EffectEvent
-	active        Event
-	ResultEffects []struct {
+	Board          *model.Board
+	trigger        *EffectEvent
+	active         Event
+	isRunning      bool
+	AppliedEffects []struct {
 		Action  Action
 		Context EffectContext
 	}
 }
 
-func (es *EventSystem) ListenHelper(maybe interface{}, action Action, state interface{}) {
-	if listener, ok := maybe.(Listener); ok {
-		listener.Listen(es, action, state)
+func PreListenHelper(es *EventSystem, maybe interface{}, action Action, state interface{}) {
+	if listener, ok := maybe.(PreListener); ok {
+		listener.PreListen(es, action, state)
 	}
 }
 
-func (es *EventSystem) transmission(event Event) {
+func RunningListenHelper(es *EventSystem, maybe interface{}, action Action, state interface{}) {
+	if listener, ok := maybe.(RunningListener); ok {
+		listener.RunningListen(es, action, state)
+	}
+}
+
+func (es *EventSystem) transmission(listenHelper func(es *EventSystem, maybe interface{}, action Action, state interface{}), event Event) {
 	es.active = event
 	players := es.Board.Players()
 	for i := range players {
-		es.ListenHelper(players[(i+es.Board.Turn())%len(players)], event.Action(), event.State())
+		listenHelper(es, players[(i+es.Board.Turn())%len(players)], event.Action(), event.State())
 	}
 
 	var searchStart, searchEnd, delta pkg.Point
@@ -47,13 +58,13 @@ func (es *EventSystem) transmission(event Event) {
 
 	for x := searchStart.X; x != searchEnd.X+delta.X; x += delta.X {
 		for y := searchStart.Y; y != searchEnd.Y+delta.Y; y += delta.Y {
-			es.ListenHelper(es.Board.Entities()[x][y], event.Action(), event.State())
+			listenHelper(es, es.Board.Entities()[x][y], event.Action(), event.State())
 		}
 	}
 
 	for x := searchStart.X; x != searchEnd.X+delta.X; x += delta.X {
 		for y := searchStart.Y; y != searchEnd.Y+delta.Y; y += delta.Y {
-			es.ListenHelper(es.Board.Structures()[x][y], event.Action(), event.State())
+			listenHelper(es, es.Board.Structures()[x][y], event.Action(), event.State())
 		}
 	}
 
@@ -68,8 +79,8 @@ func (es *EventSystem) transmission(event Event) {
 }
 
 func (es *EventSystem) Emit(event *EffectEvent) {
-	es.Trigger = event
-	es.transmission(event)
+	es.trigger = event
+	es.transmission(PreListenHelper, event)
 }
 
 func (es *EventSystem) Chain(event Event) {
@@ -90,7 +101,11 @@ func (es *EventSystem) Chain(event Event) {
 		}
 		m.modifier = modifier
 	}
-	es.transmission(event)
+	if !es.isRunning {
+		es.transmission(PreListenHelper, event)
+	} else {
+		es.transmission(RunningListenHelper, event)
+	}
 }
 
 func (es *EventSystem) ChainLine(event Event, pending ...Event) {
@@ -107,7 +122,11 @@ func (es *EventSystem) ChainLine(event Event, pending ...Event) {
 		}
 		m.modifier = modifier
 	}
-	es.transmission(event)
+	if !es.isRunning {
+		es.transmission(PreListenHelper, event)
+	} else {
+		es.transmission(RunningListenHelper, event)
+	}
 	if pending != nil && len(pending) > 0 {
 		es.ChainLine(pending[0], pending[1:]...)
 	}

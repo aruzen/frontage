@@ -2,7 +2,7 @@ package main
 
 import (
 	"frontage/internal/log"
-	"frontage/pkg/logic"
+	"frontage/pkg/engine/logic"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"frontage/pkg"
+	"frontage/pkg/engine"
 )
 
 type Skill interface {

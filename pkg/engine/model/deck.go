@@ -1,11 +1,17 @@
 package model
 
 import (
-	"frontage/pkg"
+	"frontage/pkg/engine"
 	"math/rand"
 )
 
-type Cards []*Card
+type Cards []Card
+
+func (cs *Cards) Copy() Cards {
+	dst := make(Cards, len(*cs))
+	copy(dst, *cs)
+	return dst
+}
 
 func (cs *Cards) Shuffle(rand rand.Rand) {
 	rand.Shuffle(len(*cs), func(i, j int) {
@@ -13,7 +19,7 @@ func (cs *Cards) Shuffle(rand rand.Rand) {
 	})
 }
 
-func (cs Cards) Find(count uint, pred func(*Card) bool) (Cards, bool) {
+func (cs Cards) Find(count uint, pred func(Card) bool) (Cards, bool) {
 	result := make(Cards, 0)
 	for _, card := range cs {
 		if pred(card) {
@@ -27,7 +33,7 @@ func (cs Cards) Find(count uint, pred func(*Card) bool) (Cards, bool) {
 	return result, len(result) > 0
 }
 
-func (cs Cards) FindTop(pred func(*Card) bool) (*Card, bool) {
+func (cs Cards) FindTop(pred func(Card) bool) (Card, bool) {
 	for _, card := range cs {
 		if pred(card) {
 			return card, true
@@ -36,7 +42,7 @@ func (cs Cards) FindTop(pred func(*Card) bool) (*Card, bool) {
 	return nil, false
 }
 
-func (cs Cards) FindAll(pred func(*Card) bool) (Cards, bool) {
+func (cs Cards) FindAll(pred func(Card) bool) (Cards, bool) {
 	result := make(Cards, 0)
 	for _, card := range cs {
 		if pred(card) {
@@ -46,7 +52,7 @@ func (cs Cards) FindAll(pred func(*Card) bool) (Cards, bool) {
 	return result, len(result) > 0
 }
 
-func (cs *Cards) RemoveCard(target *Card) bool {
+func (cs *Cards) RemoveCard(target Card) bool {
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if (*cs)[i] == target {
 			(*cs) = append((*cs)[:i], (*cs)[i+1:]...)
@@ -69,7 +75,7 @@ func (cs *Cards) RemoveCards(targets Cards) (int, bool) {
 	return count, len(*cs) > 0
 }
 
-func (cs *Cards) Remove(require_count int, pred func(*Card) bool) (int, bool) {
+func (cs *Cards) Remove(require_count int, pred func(Card) bool) (int, bool) {
 	count := 0
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
@@ -83,7 +89,7 @@ func (cs *Cards) Remove(require_count int, pred func(*Card) bool) (int, bool) {
 	return count, false
 }
 
-func (cs *Cards) RemoveTop(pred func(*Card) bool) bool {
+func (cs *Cards) RemoveTop(pred func(Card) bool) bool {
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
 			(*cs) = append((*cs)[:i], (*cs)[i+1:]...)
@@ -93,7 +99,7 @@ func (cs *Cards) RemoveTop(pred func(*Card) bool) bool {
 	return false
 }
 
-func (cs *Cards) RemoveAll(pred func(*Card) bool) int {
+func (cs *Cards) RemoveAll(pred func(Card) bool) int {
 	count := 0
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
@@ -118,7 +124,7 @@ func (cs *Cards) UnorderdRemoveCards(targets Cards) (int, bool) {
 	return count, len(*cs) > 0
 }
 
-func (cs *Cards) UnorderdRemoveTop(target *Card) {
+func (cs *Cards) UnorderdRemoveTop(target Card) {
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if (*cs)[i] == target {
 			(*cs)[i] = (*cs)[len(*cs)-1]
@@ -128,7 +134,7 @@ func (cs *Cards) UnorderdRemoveTop(target *Card) {
 	}
 }
 
-func (cs *Cards) Search(count int, pred func(*Card) bool) Cards {
+func (cs *Cards) Search(count int, pred func(Card) bool) Cards {
 	var removed Cards
 	for i := len(*cs) - 1; i >= 0 && count > 0; i-- {
 		if pred((*cs)[i]) {
@@ -140,7 +146,7 @@ func (cs *Cards) Search(count int, pred func(*Card) bool) Cards {
 	return removed
 }
 
-func (cs *Cards) SearchTop(pred func(*Card) bool) (*Card, bool) {
+func (cs *Cards) SearchTop(pred func(Card) bool) (Card, bool) {
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
 			card := (*cs)[i]
@@ -151,7 +157,7 @@ func (cs *Cards) SearchTop(pred func(*Card) bool) (*Card, bool) {
 	return nil, false
 }
 
-func (cs *Cards) SearchAll(pred func(*Card) bool) Cards {
+func (cs *Cards) SearchAll(pred func(Card) bool) Cards {
 	var removed Cards
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
@@ -162,7 +168,7 @@ func (cs *Cards) SearchAll(pred func(*Card) bool) Cards {
 	return removed
 }
 
-func (cs *Cards) UnorderedSearch(count int, pred func(*Card) bool) Cards {
+func (cs *Cards) UnorderedSearch(count int, pred func(Card) bool) Cards {
 	var removed Cards
 	for i := len(*cs) - 1; i >= 0 && count > 0; i-- {
 		if pred((*cs)[i]) {
@@ -175,7 +181,7 @@ func (cs *Cards) UnorderedSearch(count int, pred func(*Card) bool) Cards {
 	return removed
 }
 
-func (cs *Cards) UnorderedSearchAll(pred func(*Card) bool) Cards {
+func (cs *Cards) UnorderedSearchAll(pred func(Card) bool) Cards {
 	var removed Cards
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
@@ -187,13 +193,13 @@ func (cs *Cards) UnorderedSearchAll(pred func(*Card) bool) Cards {
 	return removed
 }
 
-func (cs *Cards) UnorderedSearchTop(pred func(*Card) bool) (Card, bool) {
+func (cs *Cards) UnorderedSearchTop(pred func(Card) bool) (Card, bool) {
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
 			card := (*cs)[i]
 			(*cs)[i] = (*cs)[len(*cs)-1]
 			*cs = (*cs)[:len(*cs)-1]
-			return *card, true
+			return card, true
 		}
 	}
 	return nil, false
@@ -203,7 +209,7 @@ func (cs *Cards) Draw(rand rand.Rand) Card {
 	card := (*cs)[len(*cs)-1]
 	*cs = (*cs)[:len(*cs)-1]
 	cs.Shuffle(rand)
-	return *card
+	return card
 }
 
 func (cs *Cards) PushTop(cards Cards) {
@@ -214,10 +220,27 @@ func (cs *Cards) PushBottom(cards Cards) {
 	*cs = append(cards, *cs...)
 }
 
-func (cs *Cards) Replace(target *Card, value *Card) bool {
+func (cs *Cards) Replace(target Card, value Card) bool {
 	if cs == nil {
 		return false
 	}
-	slice := []*Card(*cs)
-	return pkg.ReplacePtr[Card](slice, target, value)
+	slice := []Card(*cs)
+	return pkg.Replace[Card](slice, target, value)
+}
+
+func (cs *Cards) Update(card Card) bool {
+	if cs == nil {
+		return false
+	}
+	found := -1
+	for i, c := range *cs {
+		if c.Id() == card.Id() {
+			found = i
+		}
+	}
+	if found < 0 {
+		return false
+	}
+	(*cs)[found] = card
+	return true
 }

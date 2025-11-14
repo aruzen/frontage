@@ -1,7 +1,7 @@
 package model
 
 import (
-	"frontage/pkg"
+	"frontage/pkg/engine"
 	"github.com/google/uuid"
 )
 
@@ -137,9 +137,9 @@ func (e *BaseEntity) Copy() MutableEntity {
 }
 
 func (e *BaseEntity) Mirror() MutableEntity {
-	copy := e.Copy().(*BaseEntity)
-	copy.id = uuid.New()
-	return copy
+	copied := e.Copy().(*BaseEntity)
+	copied.id = uuid.New()
+	return copied
 }
 
 func (e *BaseEntity) GetSkill(tag pkg.LocalizeTag) (NamedSkill, bool) {

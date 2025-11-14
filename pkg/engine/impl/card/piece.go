@@ -1,8 +1,8 @@
 package card
 
 import (
-	"frontage/pkg"
-	"frontage/pkg/model"
+	"frontage/pkg/engine"
+	"frontage/pkg/engine/model"
 )
 
 type Piece interface {

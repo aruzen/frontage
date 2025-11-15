@@ -1,7 +1,7 @@
 package model
 
 import (
-	"frontage/pkg/engine"
+	"frontage/pkg"
 	"github.com/google/uuid"
 )
 

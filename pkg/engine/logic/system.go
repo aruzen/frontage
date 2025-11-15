@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"frontage/pkg/engine"
+	"frontage/pkg"
 	"frontage/pkg/engine/model"
 	"log/slog"
 	"reflect"

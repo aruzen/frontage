@@ -1,7 +1,7 @@
 package model
 
 import (
-	"frontage/pkg/engine"
+	"frontage/pkg"
 	"github.com/google/uuid"
 )
 
@@ -37,14 +37,10 @@ func NewBoardInfo(size pkg.Size, strategy GenerationStrategy) *BoardInfo {
 	}
 }
 
-func NewBoard(info *BoardInfo) *Board {
+func NewBoard(info *BoardInfo, players [2]*Player) *Board {
 	return &Board{
-		info: info,
-		players: [2]*Player{
-			// TODO
-			NewPlayer(make(Cards, 0), make(Cards, 0)),
-			NewPlayer(make(Cards, 0), make(Cards, 0)),
-		},
+		info:           info,
+		players:        players,
 		turn:           0,
 		structures:     pkg.Make2D[Structure](info.size, nil),
 		structureTable: map[uuid.UUID]pkg.Point{},

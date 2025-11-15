@@ -48,18 +48,18 @@ func (e *ModifyEvent) base() *baseEvent {
 	return &e.baseEvent
 }
 
-func NewEvent(a Action, state *interface{}) Event {
+func NewEvent(a Action, state interface{}) Event {
 	if effect, ok := a.(EffectAction); ok {
 		return &EffectEvent{
 			baseEvent: baseEvent{
-				state: state,
+				state: &state,
 			},
 			action: effect,
 		}
 	} else if modifier, ok := a.(ModifyAction); ok {
 		return &ModifyEvent{
 			baseEvent: baseEvent{
-				state: state,
+				state: &state,
 			},
 			action: modifier,
 		}
@@ -67,19 +67,19 @@ func NewEvent(a Action, state *interface{}) Event {
 	return nil
 }
 
-func NewEffectEvent(a EffectAction, state *interface{}) *EffectEvent {
+func NewEffectEvent(a EffectAction, state interface{}) *EffectEvent {
 	return &EffectEvent{
 		baseEvent: baseEvent{
-			state: state,
+			state: &state,
 		},
 		action: a,
 	}
 }
 
-func NewModifyEvent(a ModifyAction, state *interface{}) *ModifyEvent {
+func NewModifyEvent(a ModifyAction, state interface{}) *ModifyEvent {
 	return &ModifyEvent{
 		baseEvent: baseEvent{
-			state: state,
+			state: &state,
 		},
 		action: a,
 	}

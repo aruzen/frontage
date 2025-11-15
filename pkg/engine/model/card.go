@@ -33,7 +33,7 @@ type Card interface {
 	PlayCost() Materials
 
 	CardCopy() MutableCard
-	Mirror() MutableCard
+	Mirror(i uuid.UUID) MutableCard
 }
 
 type MutableCard interface {
@@ -73,9 +73,9 @@ func (b *BaseCard) CardCopy() MutableCard {
 	}
 }
 
-func (b *BaseCard) Mirror() MutableCard {
+func (b *BaseCard) Mirror(i uuid.UUID) MutableCard {
 	copied := b.CardCopy().(*BaseCard)
-	copied.id = uuid.New()
+	copied.id = i
 	return copied
 }
 

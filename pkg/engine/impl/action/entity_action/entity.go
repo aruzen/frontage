@@ -2,7 +2,7 @@ package entity_action
 
 import (
 	"frontage/internal/event"
-	"frontage/pkg/engine"
+	"frontage/pkg"
 	"frontage/pkg/engine/impl/action"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
@@ -121,7 +121,6 @@ func (e EntityAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
 		return nil
 	}
 	result := make([]*logic.EffectEvent, 1)
-	var i interface{} = s.decreaseHPState
-	result[0] = logic.NewEffectEvent(action.ENTITY_HP_DECREASE_ACTION, &i)
+	result[0] = logic.NewEffectEvent(action.ENTITY_HP_DECREASE_ACTION, s.decreaseHPState)
 	return result
 }

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"frontage/pkg/engine"
+	"frontage/pkg"
 	"math/rand"
 )
 

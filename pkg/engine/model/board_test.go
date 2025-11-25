@@ -24,8 +24,8 @@ func (d dummyStructure) ID() uuid.UUID {
 }
 
 func newTestBoard() *Board {
-	info := NewBoardInfo(pkg.Size{Width: 3, Height: 3}, BOARD_GENERATION_STRATEGY_CHAIN)
-	return NewBoard(info)
+	info := NewBoardInfo(pkg.Size{Width: 3, Height: 3}, GENERATION_STRATEGY_CHAIN)
+	return NewBoard(info, [2]*Player{{}, {}})
 }
 
 func TestBoardSetAndGetStructure(t *testing.T) {

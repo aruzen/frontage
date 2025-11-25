@@ -2,8 +2,8 @@ package handler
 
 import (
 	"errors"
-	"frontage/pkg/data"
 	"frontage/pkg/engine/model"
+	"frontage/pkg/network/data"
 )
 
 func InstantiationCard(c data.Card) (model.Card, error) {

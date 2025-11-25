@@ -3,10 +3,10 @@ package pvp
 import (
 	"context"
 	"frontage/pkg"
-	"frontage/pkg/data"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
-	"frontage/pkg/handler"
+	"frontage/pkg/network/data"
+	"frontage/pkg/network/handler"
 	"math/rand"
 	"time"
 )

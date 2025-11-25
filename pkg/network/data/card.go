@@ -8,6 +8,6 @@ import (
 var CardTable = map[string]model.Card{}
 
 type Card struct {
-	Name string
-	UUID uuid.UUID
+	Local string
+	UUID  uuid.UUID
 }

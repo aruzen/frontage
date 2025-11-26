@@ -1,5 +1,7 @@
 package pkg
 
+import "fmt"
+
 import "log/slog"
 
 type Size struct {
@@ -97,6 +99,51 @@ func Replace2DPtr[T any](data [][]*T, target *T, value *T) bool {
 		}
 	}
 	return false
+}
+
+// ToInt converts various numeric interface values to int.
+// Returns an error if the underlying type is not a number.
+func ToInt(v interface{}) (int, error) {
+	switch val := v.(type) {
+	case int:
+		return val, nil
+	case int64:
+		return int(val), nil
+	case float64:
+		return int(val), nil
+	case float32:
+		return int(val), nil
+	case uint:
+		return int(val), nil
+	case uint64:
+		return int(val), nil
+	case nil:
+		return 0, fmt.Errorf("value is nil")
+	default:
+		return 0, fmt.Errorf("expected number, got %T", v)
+	}
+}
+
+// PointToMap converts pkg.Point to a generic map for serialization.
+func PointToMap(p Point) map[string]interface{} {
+	return map[string]interface{}{"x": p.X, "y": p.Y}
+}
+
+// PointFromMap parses map into pkg.Point.
+func PointFromMap(v interface{}) (Point, error) {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return Point{}, fmt.Errorf("expected map for point, got %T", v)
+	}
+	x, err := ToInt(m["x"])
+	if err != nil {
+		return Point{}, fmt.Errorf("x: %w", err)
+	}
+	y, err := ToInt(m["y"])
+	if err != nil {
+		return Point{}, fmt.Errorf("y: %w", err)
+	}
+	return Point{X: x, Y: y}, nil
 }
 
 func Overwrite[T any](dist, src []T) {

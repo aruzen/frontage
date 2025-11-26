@@ -3,6 +3,7 @@ package card_action
 import (
 	"fmt"
 	"frontage/internal/event"
+	"frontage/pkg"
 	"frontage/pkg/engine/impl/action"
 	"frontage/pkg/engine/impl/card"
 	"frontage/pkg/engine/logic"
@@ -53,7 +54,7 @@ func (c *PieceHPContext) FromMap(m map[string]interface{}) error {
 		return err
 	}
 	if v, ok := m["value"]; ok {
-		num, err := toInt(v)
+		num, err := pkg.ToInt(v)
 		if err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
@@ -83,7 +84,7 @@ func (c *PieceMPContext) FromMap(m map[string]interface{}) error {
 		return err
 	}
 	if v, ok := m["value"]; ok {
-		num, err := toInt(v)
+		num, err := pkg.ToInt(v)
 		if err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
@@ -113,7 +114,7 @@ func (c *PieceATKContext) FromMap(m map[string]interface{}) error {
 		return err
 	}
 	if v, ok := m["value"]; ok {
-		num, err := toInt(v)
+		num, err := pkg.ToInt(v)
 		if err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
@@ -381,23 +382,4 @@ func (p PieceATKFixAction) Solve(board *model.Board, state interface{}, context 
 		m.SetATK(atkContext.Value)
 	})
 	return board, logic.Summary{"set_atk": atkContext.Value}
-}
-
-func toInt(v interface{}) (int, error) {
-	switch val := v.(type) {
-	case int:
-		return val, nil
-	case int64:
-		return int(val), nil
-	case float64:
-		return int(val), nil
-	case float32:
-		return int(val), nil
-	case uint:
-		return int(val), nil
-	case uint64:
-		return int(val), nil
-	default:
-		return 0, fmt.Errorf("expected number, got %T", v)
-	}
 }

@@ -26,8 +26,8 @@ type Board struct {
 	players          [2]Player
 	structures       [][]Structure
 	structureTable   map[uuid.UUID]pkg.Point
-	entities         [][]Entity
-	entityTable      map[uuid.UUID]pkg.Point
+	pieces           [][]Piece
+	pieceTable       map[uuid.UUID]pkg.Point
 }
 
 func NewBoardInfo(size pkg.Size, strategy GenerationStrategy) *BoardInfo {
@@ -44,8 +44,8 @@ func NewBoard(info *BoardInfo, players [2]Player) *Board {
 		turn:           0,
 		structures:     pkg.Make2D[Structure](info.size, nil),
 		structureTable: map[uuid.UUID]pkg.Point{},
-		entities:       pkg.Make2D[Entity](info.size, nil),
-		entityTable:    map[uuid.UUID]pkg.Point{},
+		pieces:         pkg.Make2D[Piece](info.size, nil),
+		pieceTable:     map[uuid.UUID]pkg.Point{},
 	}
 }
 
@@ -57,8 +57,8 @@ func (b *Board) Copy() *Board {
 		players:        [2]Player{b.players[0].Copy(), b.players[1].Copy()},
 		structures:     pkg.Copy2D(b.info.size, b.structures),
 		structureTable: pkg.CopyMap(b.structureTable),
-		entities:       pkg.Copy2D(b.info.size, b.entities),
-		entityTable:    pkg.CopyMap(b.entityTable),
+		pieces:         pkg.Copy2D(b.info.size, b.pieces),
+		pieceTable:     pkg.CopyMap(b.pieceTable),
 	}
 }
 
@@ -68,8 +68,8 @@ func (b *Board) Overwrite(src *Board) {
 	b.side = src.side
 	b.players[0] = src.players[0].Copy()
 	b.players[1] = src.players[1].Copy()
-	pkg.Overwrite2D(b.entities, src.entities)
-	b.entityTable = pkg.CopyMap(src.entityTable)
+	pkg.Overwrite2D(b.pieces, src.pieces)
+	b.pieceTable = pkg.CopyMap(src.pieceTable)
 	pkg.Overwrite2D(b.structures, src.structures)
 	b.structureTable = pkg.CopyMap(src.structureTable)
 }
@@ -94,8 +94,8 @@ func (b *Board) Next() *Board {
 			players:          [2]Player{b.players[0].Copy(), b.players[1].Copy()},
 			structures:       pkg.Copy2D(b.info.size, b.structures),
 			structureTable:   pkg.CopyMap(b.structureTable),
-			entities:         pkg.Copy2D(b.info.size, b.entities),
-			entityTable:      pkg.CopyMap(b.entityTable),
+			pieces:           pkg.Copy2D(b.info.size, b.pieces),
+			pieceTable:       pkg.CopyMap(b.pieceTable),
 		}
 	} else if b.info.boardGenerationStrategy == GENERATION_STRATEGY_SWAP {
 		result := b.beforeGeneration
@@ -140,8 +140,8 @@ func (b *Board) Structures() [][]Structure {
 	return b.structures
 }
 
-func (b *Board) Entities() [][]Entity {
-	return b.entities
+func (b *Board) Entities() [][]Piece {
+	return b.pieces
 }
 
 func (b *Board) GetStructure(id uuid.UUID) (Structure, bool) {
@@ -163,23 +163,23 @@ func (b *Board) GetStructure(id uuid.UUID) (Structure, bool) {
 	return structure, true
 }
 
-func (b *Board) GetEntity(id uuid.UUID) (Entity, bool) {
+func (b *Board) GetPiece(id uuid.UUID) (Piece, bool) {
 	if b == nil {
 		return nil, false
 	}
-	pos, ok := b.entityTable[id]
+	pos, ok := b.pieceTable[id]
 	if !ok || !b.inBounds(pos) {
 		if ok {
-			delete(b.entityTable, id)
+			delete(b.pieceTable, id)
 		}
 		return nil, false
 	}
-	entity := b.entities[pos.X][pos.Y]
-	if entity == nil || entity.Id() != id {
-		delete(b.entityTable, id)
+	piece := b.pieces[pos.X][pos.Y]
+	if piece == nil || piece.Id() != id {
+		delete(b.pieceTable, id)
 		return nil, false
 	}
-	return entity, true
+	return piece, true
 }
 
 func (b *Board) SetStructure(pos pkg.Point, structure Structure) bool {
@@ -209,35 +209,35 @@ func (b *Board) RemoveStructure(pos pkg.Point) bool {
 	return b.SetStructure(pos, nil)
 }
 
-// SetEntity Move操作について, 元々配置されているEntity(UUIDで判別)がSetされる時元いた位置にnilを代入する
-func (b *Board) SetEntity(pos pkg.Point, entity Entity) bool {
+// SetPiece Move操作について, 元々配置されているPiece(UUIDで判別)がSetされる時元いた位置にnilを代入する
+func (b *Board) SetPiece(pos pkg.Point, piece Piece) bool {
 	if b == nil || !b.inBounds(pos) {
 		return false
 	}
-	if current := b.entities[pos.X][pos.Y]; current != nil {
-		delete(b.entityTable, current.Id())
+	if current := b.pieces[pos.X][pos.Y]; current != nil {
+		delete(b.pieceTable, current.Id())
 	}
-	b.entities[pos.X][pos.Y] = entity
-	if entity == nil {
+	b.pieces[pos.X][pos.Y] = piece
+	if piece == nil {
 		return true
 	}
-	id := entity.Id()
-	if prevPos, ok := b.entityTable[id]; ok && (prevPos != pos) {
+	id := piece.Id()
+	if prevPos, ok := b.pieceTable[id]; ok && (prevPos != pos) {
 		if b.inBounds(prevPos) {
-			if prev := b.entities[prevPos.X][prevPos.Y]; prev != nil && prev.Id() == id {
-				b.entities[prevPos.X][prevPos.Y] = nil
+			if prev := b.pieces[prevPos.X][prevPos.Y]; prev != nil && prev.Id() == id {
+				b.pieces[prevPos.X][prevPos.Y] = nil
 			}
 		}
 	}
-	b.entityTable[id] = pos
-	if mutable, ok := entity.(MutableEntity); ok {
+	b.pieceTable[id] = pos
+	if mutable, ok := piece.(MutablePiece); ok {
 		mutable.SetPosition(pos)
 	}
 	return true
 }
 
-func (b *Board) RemoveEntity(pos pkg.Point) bool {
-	return b.SetEntity(pos, nil)
+func (b *Board) RemovePiece(pos pkg.Point) bool {
+	return b.SetPiece(pos, nil)
 }
 
 func (b *Board) UpdateStructure(structure Structure) bool {
@@ -255,19 +255,19 @@ func (b *Board) UpdateStructure(structure Structure) bool {
 	return b.SetStructure(pos, structure)
 }
 
-func (b *Board) UpdateEntity(entity Entity) bool {
-	if b == nil || entity == nil {
+func (b *Board) UpdatePiece(piece Piece) bool {
+	if b == nil || piece == nil {
 		return false
 	}
-	id := entity.Id()
-	pos, ok := b.entityTable[id]
+	id := piece.Id()
+	pos, ok := b.pieceTable[id]
 	if !ok || !b.inBounds(pos) {
 		if ok {
-			delete(b.entityTable, id)
+			delete(b.pieceTable, id)
 		}
 		return false
 	}
-	return b.SetEntity(pos, entity)
+	return b.SetPiece(pos, piece)
 }
 
 func (b *Board) ActivePlayer() Player {

@@ -6,12 +6,12 @@ import (
 )
 
 type CardRepository struct {
-	table map[pkg.LocalizeTag]model.Card
+	table map[pkg.ItemTag]model.Card
 }
 
 func NewCardRepository() *CardRepository {
 	return &CardRepository{
-		table: make(map[pkg.LocalizeTag]model.Card),
+		table: make(map[pkg.ItemTag]model.Card),
 	}
 }
 
@@ -23,7 +23,7 @@ func (r *CardRepository) Insert(card model.Card) error {
 	return nil
 }
 
-func (r *CardRepository) Find(tag pkg.LocalizeTag) (model.Card, error) {
+func (r *CardRepository) Find(tag pkg.ItemTag) (model.Card, error) {
 	card, find := r.table[tag]
 	if !find {
 		return nil, ErrNotFound

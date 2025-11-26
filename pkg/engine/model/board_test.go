@@ -100,88 +100,88 @@ func TestBoardUpdateStructure(t *testing.T) {
 	}
 }
 
-func TestBoardSetAndGetEntity(t *testing.T) {
+func TestBoardSetAndGetPiece(t *testing.T) {
 	board := newTestBoard()
 	owner := board.Players()[0]
 	pos := pkg.Point{X: 2, Y: 0}
-	entity := NewBaseEntity(owner, pkg.Point{X: 0, Y: 0}, 10, 5, 3, nil, nil)
+	piece := NewBasePiece(owner, pkg.Point{X: 0, Y: 0}, 10, 5, 3, nil, nil)
 
-	if !board.SetEntity(pos, entity) {
-		t.Fatalf("SetEntity(%v) returned false", pos)
+	if !board.SetPiece(pos, piece) {
+		t.Fatalf("SetPiece(%v) returned false", pos)
 	}
-	got, ok := board.GetEntity(entity.Id())
+	got, ok := board.GetPiece(piece.Id())
 	if !ok {
-		t.Fatalf("GetEntity(%v) returned !ok", entity.Id())
+		t.Fatalf("GetPiece(%v) returned !ok", piece.Id())
 	}
-	if got != entity {
-		t.Fatalf("expected same entity pointer")
+	if got != piece {
+		t.Fatalf("expected same piece pointer")
 	}
-	if board.entities[pos.X][pos.Y] != entity {
-		t.Fatalf("entity grid not updated at %v", pos)
+	if board.pieces[pos.X][pos.Y] != piece {
+		t.Fatalf("piece grid not updated at %v", pos)
 	}
-	if storedPos, ok := board.entityTable[entity.Id()]; !ok || storedPos != pos {
-		t.Fatalf("entity table mismatch: got %v want %v", storedPos, pos)
+	if storedPos, ok := board.pieceTable[piece.Id()]; !ok || storedPos != pos {
+		t.Fatalf("piece table mismatch: got %v want %v", storedPos, pos)
 	}
-	if entity.Position() != pos {
-		t.Fatalf("SetEntity should sync MutableEntity position, got %v want %v", entity.Position(), pos)
+	if piece.Position() != pos {
+		t.Fatalf("SetPiece should sync MutablePiece position, got %v want %v", piece.Position(), pos)
 	}
 }
 
-func TestBoardSetEntityMovesExistingID(t *testing.T) {
+func TestBoardSetPieceMovesExistingID(t *testing.T) {
 	board := newTestBoard()
 	owner := board.Players()[0]
 	from := pkg.Point{X: 0, Y: 1}
 	to := pkg.Point{X: 1, Y: 1}
-	entity := NewBaseEntity(owner, from, 8, 4, 2, nil, nil)
+	piece := NewBasePiece(owner, from, 8, 4, 2, nil, nil)
 
-	if !board.SetEntity(from, entity) {
-		t.Fatalf("SetEntity(%v) failed", from)
+	if !board.SetPiece(from, piece) {
+		t.Fatalf("SetPiece(%v) failed", from)
 	}
-	clone := entity.Copy()
-	if !board.SetEntity(to, clone) {
-		t.Fatalf("SetEntity(%v) with clone failed", to)
+	clone := piece.Copy()
+	if !board.SetPiece(to, clone) {
+		t.Fatalf("SetPiece(%v) with clone failed", to)
 	}
 
-	if board.entities[from.X][from.Y] != nil {
+	if board.pieces[from.X][from.Y] != nil {
 		t.Fatalf("old cell %v was not cleared", from)
 	}
-	if board.entities[to.X][to.Y] != clone {
+	if board.pieces[to.X][to.Y] != clone {
 		t.Fatalf("new cell %v missing clone", to)
 	}
-	if storedPos := board.entityTable[entity.Id()]; storedPos != to {
-		t.Fatalf("entity table not updated, got %v want %v", storedPos, to)
+	if storedPos := board.pieceTable[piece.Id()]; storedPos != to {
+		t.Fatalf("piece table not updated, got %v want %v", storedPos, to)
 	}
 	if clone.Position() != to {
-		t.Fatalf("MutableEntity position not updated, got %v want %v", clone.Position(), to)
+		t.Fatalf("MutablePiece position not updated, got %v want %v", clone.Position(), to)
 	}
 }
 
-func TestBoardUpdateEntity(t *testing.T) {
+func TestBoardUpdatePiece(t *testing.T) {
 	board := newTestBoard()
 	owner := board.Players()[0]
 	pos := pkg.Point{X: 1, Y: 2}
-	entity := NewBaseEntity(owner, pos, 12, 6, 4, nil, nil)
-	if !board.SetEntity(pos, entity) {
-		t.Fatalf("SetEntity(%v) failed", pos)
+	piece := NewBasePiece(owner, pos, 12, 6, 4, nil, nil)
+	if !board.SetPiece(pos, piece) {
+		t.Fatalf("SetPiece(%v) failed", pos)
 	}
 
-	updated := entity.Copy()
-	updatedMutable, ok := updated.(MutableEntity)
+	updated := piece.Copy()
+	updatedMutable, ok := updated.(MutablePiece)
 	if !ok {
-		t.Fatalf("Copy should return MutableEntity")
+		t.Fatalf("Copy should return MutablePiece")
 	}
 	updatedMutable.SetHP(99)
 
-	if !board.UpdateEntity(updated) {
-		t.Fatalf("UpdateEntity should succeed for existing entity")
+	if !board.UpdatePiece(updated) {
+		t.Fatalf("UpdatePiece should succeed for existing piece")
 	}
-	stored, ok := board.GetEntity(entity.Id())
+	stored, ok := board.GetPiece(piece.Id())
 	if !ok || stored != updated {
-		t.Fatalf("entity not updated in board")
+		t.Fatalf("piece not updated in board")
 	}
 
-	missing := NewBaseEntity(owner, pkg.Point{X: 0, Y: 0}, 5, 3, 1, nil, nil)
-	if board.UpdateEntity(missing) {
-		t.Fatalf("UpdateEntity should fail for unknown entity")
+	missing := NewBasePiece(owner, pkg.Point{X: 0, Y: 0}, 5, 3, 1, nil, nil)
+	if board.UpdatePiece(missing) {
+		t.Fatalf("UpdatePiece should fail for unknown piece")
 	}
 }

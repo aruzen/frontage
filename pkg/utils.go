@@ -12,10 +12,10 @@ type Point struct {
 	Y int
 }
 
-type LocalizeTag string
+type ItemTag string
 
-type Localized interface {
-	Tag() LocalizeTag
+type HaveItemTag interface {
+	Tag() ItemTag
 }
 
 type PacketHeader struct {

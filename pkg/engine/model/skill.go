@@ -1,15 +1,9 @@
 package model
 
-import (
-	"frontage/pkg"
-)
+type SkillTag string
 
 type Skill interface {
-}
-
-type NamedSkill interface {
-	pkg.Localized
-	Skill
+	Tag() SkillTag
 }
 
 type ActiveSkill interface {

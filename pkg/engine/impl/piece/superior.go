@@ -1,9 +1,9 @@
-package entity
+package piece
 
 import (
 	"frontage/pkg/engine/model"
 )
 
 type Superior struct {
-	model.BaseEntity
+	model.BasePiece
 }

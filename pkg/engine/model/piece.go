@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Entity interface {
+type Piece interface {
 	Id() uuid.UUID
 	Position() pkg.Point
 	HP() int
@@ -13,30 +13,30 @@ type Entity interface {
 	ATK() int
 	Owner() Player
 
-	HaveSkill(s NamedSkill) bool
+	HaveSkill(s SkillTag) bool
 	Skills() []Skill
 	LegalMoves() []pkg.Point
 	AttackRanges() []pkg.Point
 
-	Copy() MutableEntity
-	Mirror() MutableEntity
+	Copy() MutablePiece
+	Mirror() MutablePiece
 }
 
-type MutableEntity interface {
-	Entity
+type MutablePiece interface {
+	Piece
 
-	GetSkill(s pkg.LocalizeTag) (NamedSkill, bool)
+	GetSkill(s SkillTag) (Skill, bool)
 	AddSkill(s Skill)
 	RemoveSkill(s Skill)
 	SetHP(int)
 	SetMP(int)
 	SetATK(int)
 
-	// SetPosition この関数ではボード側にも適用されないので、呼び出さないでください。`Board.SetEntity(Entity)`を使用してください。
+	// SetPosition この関数ではボード側にも適用されないので、呼び出さないでください。`Board.SetPiece(Piece)`を使用してください。
 	SetPosition(pos pkg.Point)
 }
 
-type BaseEntity struct {
+type BasePiece struct {
 	id       uuid.UUID
 	position pkg.Point
 	hp       int
@@ -49,10 +49,10 @@ type BaseEntity struct {
 	attackRanges []pkg.Point
 }
 
-var _ MutableEntity = (*BaseEntity)(nil)
+var _ MutablePiece = (*BasePiece)(nil)
 
-func NewBaseEntity(owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BaseEntity {
-	entity := &BaseEntity{
+func NewBasePiece(owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BasePiece {
+	piece := &BasePiece{
 		id:           uuid.New(),
 		owner:        owner,
 		position:     pos,
@@ -63,67 +63,64 @@ func NewBaseEntity(owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, att
 		attackRanges: append([]pkg.Point(nil), attackRanges...),
 	}
 	if len(skills) > 0 {
-		entity.skills = append([]Skill(nil), skills...)
+		piece.skills = append([]Skill(nil), skills...)
 	}
-	return entity
+	return piece
 }
 
-func (e *BaseEntity) Position() pkg.Point {
+func (e *BasePiece) Position() pkg.Point {
 	return e.position
 }
 
-func (e *BaseEntity) Id() uuid.UUID {
+func (e *BasePiece) Id() uuid.UUID {
 	return e.id
 }
 
-func (e *BaseEntity) HP() int {
+func (e *BasePiece) HP() int {
 	return e.hp
 }
 
-func (e *BaseEntity) MP() int {
+func (e *BasePiece) MP() int {
 	return e.mp
 }
 
-func (e *BaseEntity) ATK() int {
+func (e *BasePiece) ATK() int {
 	return e.atk
 }
 
-func (e *BaseEntity) Owner() Player {
+func (e *BasePiece) Owner() Player {
 	return e.owner
 }
 
-func (e *BaseEntity) HaveSkill(s NamedSkill) bool {
-	if s == nil {
-		return false
-	}
-	_, ok := e.GetSkill(s.Name())
+func (e *BasePiece) HaveSkill(s SkillTag) bool {
+	_, ok := e.GetSkill(s)
 	return ok
 }
 
-func (e *BaseEntity) Skills() []Skill {
+func (e *BasePiece) Skills() []Skill {
 	result := make([]Skill, len(e.skills))
 	copy(result, e.skills)
 	return result
 }
 
 // LegalMoves は返り値を書き換えないでください。
-func (e *BaseEntity) LegalMoves() []pkg.Point {
+func (e *BasePiece) LegalMoves() []pkg.Point {
 	result := make([]pkg.Point, len(e.legalMoves))
 	copy(result, e.legalMoves)
 	return result
 }
 
 // AttackRanges は返り値を書き換えないでください。
-func (e *BaseEntity) AttackRanges() []pkg.Point {
+func (e *BasePiece) AttackRanges() []pkg.Point {
 	result := make([]pkg.Point, len(e.attackRanges))
 	copy(result, e.attackRanges)
 	return result
 }
 
-func (e *BaseEntity) Copy() MutableEntity {
+func (e *BasePiece) Copy() MutablePiece {
 	copySkills := make([]Skill, len(e.skills))
 	copy(copySkills, e.skills)
-	return &BaseEntity{
+	return &BasePiece{
 		id:           e.id,
 		position:     e.position,
 		hp:           e.hp,
@@ -136,29 +133,29 @@ func (e *BaseEntity) Copy() MutableEntity {
 	}
 }
 
-func (e *BaseEntity) Mirror() MutableEntity {
-	copied := e.Copy().(*BaseEntity)
+func (e *BasePiece) Mirror() MutablePiece {
+	copied := e.Copy().(*BasePiece)
 	copied.id = uuid.New()
 	return copied
 }
 
-func (e *BaseEntity) GetSkill(tag pkg.LocalizeTag) (NamedSkill, bool) {
+func (e *BasePiece) GetSkill(tag SkillTag) (Skill, bool) {
 	for _, sk := range e.skills {
-		if named, ok := sk.(NamedSkill); ok && named.Name() == tag {
-			return named, true
+		if sk.Tag() == tag {
+			return sk, true
 		}
 	}
 	return nil, false
 }
 
-func (e *BaseEntity) AddSkill(s Skill) {
+func (e *BasePiece) AddSkill(s Skill) {
 	if s == nil {
 		return
 	}
 	e.skills = append(e.skills, s)
 }
 
-func (e *BaseEntity) RemoveSkill(target Skill) {
+func (e *BasePiece) RemoveSkill(target Skill) {
 	for i, sk := range e.skills {
 		if sk == target {
 			e.skills = append(e.skills[:i], e.skills[i+1:]...)
@@ -167,18 +164,18 @@ func (e *BaseEntity) RemoveSkill(target Skill) {
 	}
 }
 
-func (e *BaseEntity) SetHP(v int) {
+func (e *BasePiece) SetHP(v int) {
 	e.hp = v
 }
 
-func (e *BaseEntity) SetMP(v int) {
+func (e *BasePiece) SetMP(v int) {
 	e.mp = v
 }
 
-func (e *BaseEntity) SetATK(v int) {
+func (e *BasePiece) SetATK(v int) {
 	e.atk = v
 }
 
-func (e *BaseEntity) SetPosition(pos pkg.Point) {
+func (e *BasePiece) SetPosition(pos pkg.Point) {
 	e.position = pos
 }

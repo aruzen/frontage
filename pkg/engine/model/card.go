@@ -26,8 +26,8 @@ const (
 )
 
 type Card interface {
+	pkg.Localized
 	Id() uuid.UUID
-	Tag() pkg.ItemTag
 	Placed() Placed
 	Type() CardType
 	PlayCost() Materials
@@ -45,14 +45,14 @@ type MutableCard interface {
 
 type BaseCard struct {
 	id       uuid.UUID
-	tag      pkg.ItemTag
+	tag      pkg.LocalizeTag
 	placed   Placed
 	playCost Materials
 }
 
 var _ MutableCard = (*BaseCard)(nil)
 
-func NewBaseCard(tag pkg.ItemTag, placed Placed, playCost Materials) *BaseCard {
+func NewBaseCard(tag pkg.LocalizeTag, placed Placed, playCost Materials) *BaseCard {
 	return &BaseCard{
 		id:       uuid.New(),
 		tag:      tag,
@@ -80,7 +80,7 @@ func (b *BaseCard) Id() uuid.UUID {
 	return b.id
 }
 
-func (b *BaseCard) Tag() pkg.ItemTag {
+func (b *BaseCard) LocalizeTag() pkg.LocalizeTag {
 	return b.tag
 }
 

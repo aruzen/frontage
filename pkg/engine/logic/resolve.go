@@ -9,18 +9,12 @@ func (es *EventSystem) Resolve() {
 	es.trigger.Resolve(es, nil, nil)
 }
 
-func (es *EventSystem) ResolveTest() (*model.Board, []struct {
-	Action  Action
-	Context EffectContext
-}) {
+func (es *EventSystem) ResolveTest() (*model.Board, []ActionResult) {
 	sandbox := &EventSystem{
-		Board:   es.Board.Sandbox(),
-		trigger: es.trigger,
-		active:  es.active,
-		AppliedEffects: make([]struct {
-			Action  Action
-			Context EffectContext
-		}, 0),
+		Board:          es.Board.Sandbox(),
+		trigger:        es.trigger,
+		active:         es.active,
+		AppliedEffects: make([]ActionResult, 0),
 	}
 	sandbox.Resolve()
 	return es.Board, es.AppliedEffects

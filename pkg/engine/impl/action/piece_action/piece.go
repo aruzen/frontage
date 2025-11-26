@@ -130,6 +130,11 @@ type PieceInvasionAction struct {
 	logic.BaseAction[PieceAttackActionState, PieceAttackActionContext]
 }
 
+func (PieceSummonAction) Tag() logic.EffectActionTag   { return action.ENTITY_SUMMON_ACTION }
+func (PieceMoveAction) Tag() logic.EffectActionTag     { return action.ENTITY_MOVE_ACTION }
+func (PieceAttackAction) Tag() logic.EffectActionTag   { return action.ENTITY_ATTACK_ACTION }
+func (PieceInvasionAction) Tag() logic.EffectActionTag { return action.ENTITY_INVASION_ACTION }
+
 func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
 	if s, ok := state.(PieceSummonActionState); ok {
 		return &PieceSummonActionContext{event.BaseEffectContext{}, s.point, s.piece}

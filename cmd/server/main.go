@@ -11,23 +11,23 @@ func main() {
 	for {
 		addr, err := net.ResolveUDPAddr("udp", ":8275")
 		if err != nil {
-			slog.Error("Failed to resolve UDP address", err)
+			slog.Error("Failed to resolve UDP address", "err", err)
 			continue
 		}
 		conn, err := net.ListenUDP("udp", addr)
 		if err != nil {
-			slog.Error("Failed to listen UDP address", err)
+			slog.Error("Failed to listen UDP address", "err", err)
 			continue
 		}
 		defer func(conn *net.UDPConn) {
 			err := conn.Close()
 			if err != nil {
-				slog.Error("Failed to close UDP connection", err)
+				slog.Error("Failed to close UDP connection", "err", err)
 			}
 		}(conn)
 		id, err := uuid.NewUUID()
 		if err != nil {
-			slog.Error("Failed to generate UUID", err)
+			slog.Error("Failed to generate UUID", "err", err)
 		}
 		repository.AddConnection(id, conn)
 		defer repository.RemoveConnection(id)

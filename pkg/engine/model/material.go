@@ -8,7 +8,7 @@ import (
 type material struct {
 	name  string
 	color color.Color
-	tag   pkg.ItemTag
+	tag   pkg.LocalizeTag
 }
 
 type Material = *material
@@ -38,9 +38,9 @@ var (
 	FAITH = &material{name: "FAITH", color: color.RGBA{R: 255, G: 255, B: 255, A: 255}, tag: "Material/FAITH"}
 )
 
-func (m Material) Name() string       { return m.name }
-func (m Material) Color() color.Color { return m.color }
-func (m Material) Tag() pkg.ItemTag   { return m.tag }
+func (m Material) Name() string         { return m.name }
+func (m Material) Color() color.Color   { return m.color }
+func (m Material) Tag() pkg.LocalizeTag { return m.tag }
 
 type Materials map[Material]int
 

@@ -3,6 +3,7 @@ package piece_action
 import (
 	"fmt"
 	"frontage/internal/event"
+	"frontage/pkg/engine/impl/action"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
 	"log/slog"
@@ -117,6 +118,16 @@ type PieceATKIncreaseAction struct{ basePieceATKAction }
 type PieceATKDecreaseAction struct{ basePieceATKAction }
 
 type PieceATKFixAction struct{ basePieceATKAction }
+
+func (PieceHPIncreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_HP_INCREASE_ACTION }
+func (PieceHPDecreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_HP_DECREASE_ACTION }
+func (PieceHPFixAction) Tag() logic.EffectActionTag       { return action.ENTITY_HP_FIX_ACTION }
+func (PieceMPIncreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_MP_INCREASE_ACTION }
+func (PieceMPDecreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_MP_DECREASE_ACTION }
+func (PieceMPFixAction) Tag() logic.EffectActionTag       { return action.ENTITY_MP_FIX_ACTION }
+func (PieceATKIncreaseAction) Tag() logic.EffectActionTag { return action.ENTITY_ATK_INCREASE_ACTION }
+func (PieceATKDecreaseAction) Tag() logic.EffectActionTag { return action.ENTITY_ATK_DECREASE_ACTION }
+func (PieceATKFixAction) Tag() logic.EffectActionTag      { return action.ENTITY_ATK_FIX_ACTION }
 
 func (e PieceOperateActionState) Piece() model.MutablePiece {
 	return e.piece

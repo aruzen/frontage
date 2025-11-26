@@ -60,7 +60,7 @@ func (h *MyDeckUploadHandler) ServePacket(data []byte) (model.Cards, model.Cards
 	instantiateDeck := func(tags []string) (model.Cards, error) {
 		deck := make(model.Cards, len(tags))
 		for i, tag := range tags {
-			cardTemplate, err := h.cardRepo.Find(pkg.ItemTag(tag))
+			cardTemplate, err := h.cardRepo.Find(pkg.LocalizeTag(tag))
 			if err != nil {
 				return nil, err
 			}

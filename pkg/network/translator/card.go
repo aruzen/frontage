@@ -14,7 +14,7 @@ type CardTranslator struct {
 }
 
 func (cr *CardTranslator) ToPieceModel(d data.PieceCard) (card.MutablePiece, error) {
-	m, err := cr.cardRepo.Find(pkg.ItemTag(d.Tag))
+	m, err := cr.cardRepo.Find(pkg.LocalizeTag(d.Tag))
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (cr *CardTranslator) ToPieceData(m card.Piece) (data.PieceCard, error) {
 		Card: data.Card{
 			Placed: int(m.Placed()),
 			Type:   int(m.Type()),
-			Tag:    string(m.Tag()),
+			Tag:    string(m.LocalizeTag()),
 			UUID:   m.Id(),
 			Cost:   material,
 		},

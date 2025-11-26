@@ -20,10 +20,7 @@ type EventSystem struct {
 	trigger        *EffectEvent
 	active         Event
 	isRunning      bool
-	AppliedEffects []struct {
-		Action  Action
-		Context EffectContext
-	}
+	AppliedEffects []ActionResult
 }
 
 func PreListenHelper(es *EventSystem, maybe interface{}, action Action, state interface{}) {

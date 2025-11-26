@@ -12,10 +12,10 @@ type Point struct {
 	Y int `json:"y"`
 }
 
-type ItemTag string
+type LocalizeTag string
 
-type HaveItemTag interface {
-	Tag() ItemTag
+type Localized interface {
+	LocalizeTag() LocalizeTag
 }
 
 type PacketHeader struct {

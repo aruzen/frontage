@@ -1,8 +1,10 @@
 package game_api
 
+import "frontage/pkg/network/data"
+
 type ActEventPayload struct {
-	ActionTag string
-	data      map[string]interface{}
+	result  data.ActionResult
+	summary []data.EventSummary
 }
 
 type ActEventPacket struct {

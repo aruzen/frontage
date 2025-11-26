@@ -3,6 +3,7 @@ package card_action
 import (
 	"fmt"
 	"frontage/internal/event"
+	"frontage/pkg/engine/impl/action"
 	"frontage/pkg/engine/impl/card"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
@@ -150,6 +151,20 @@ type PieceATKIncreaseAction struct{ baseATKAction }
 type PieceATKDecreaseAction struct{ baseATKAction }
 
 type PieceATKFixAction struct{ baseATKAction }
+
+func (PieceHPIncreaseAction) Tag() logic.EffectActionTag { return action.CARD_PIECE_HP_INCREASE_ACTION }
+func (PieceHPDecreaseAction) Tag() logic.EffectActionTag { return action.CARD_PIECE_HP_DECREASE_ACTION }
+func (PieceHPFixAction) Tag() logic.EffectActionTag      { return action.CARD_PIECE_HP_FIX_ACTION }
+func (PieceMPIncreaseAction) Tag() logic.EffectActionTag { return action.CARD_PIECE_MP_INCREASE_ACTION }
+func (PieceMPDecreaseAction) Tag() logic.EffectActionTag { return action.CARD_PIECE_MP_DECREASE_ACTION }
+func (PieceMPFixAction) Tag() logic.EffectActionTag      { return action.CARD_PIECE_MP_FIX_ACTION }
+func (PieceATKIncreaseAction) Tag() logic.EffectActionTag {
+	return action.CARD_PIECE_ATK_INCREASE_ACTION
+}
+func (PieceATKDecreaseAction) Tag() logic.EffectActionTag {
+	return action.CARD_PIECE_ATK_DECREASE_ACTION
+}
+func (PieceATKFixAction) Tag() logic.EffectActionTag { return action.CARD_PIECE_ATK_FIX_ACTION }
 
 func (p PieceActionState) HolderIndex() int {
 	return p.holder

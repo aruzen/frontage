@@ -20,11 +20,11 @@ type PieceOperateActionState struct {
 func (s PieceOperateActionState) ToMap() map[string]interface{} {
 	return map[string]interface{}{
 		"piece_id": s.pieceID.String(),
-		"value":    s.Value,
+		"value":    s.Value(),
 	}
 }
 
-func (s *PieceOperateActionState) FromMap(m map[string]interface{}) error {
+func (s *PieceOperateActionState) FromMap(b *model.Board, m map[string]interface{}) error {
 	var err error
 	s.pieceID, err = pkg.ToUUID(m["piece_id"])
 	if err != nil {
@@ -33,6 +33,13 @@ func (s *PieceOperateActionState) FromMap(m map[string]interface{}) error {
 	s.value, err = pkg.ToInt(m["value"])
 	if err != nil {
 		return err
+	}
+	if b != nil {
+		if piece, ok := b.GetPiece(s.pieceID); ok {
+			if mut, ok := piece.(model.MutablePiece); ok {
+				s.piece = mut
+			}
+		}
 	}
 	return nil
 }
@@ -62,13 +69,11 @@ func (c *PieceHPContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
+	c.Value = num
 	return nil
 }
 
@@ -82,13 +87,11 @@ func (c *PieceMPContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
+	c.Value = num
 	return nil
 }
 
@@ -102,13 +105,11 @@ func (c *PieceATKContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
+	c.Value = num
 	return nil
 }
 

@@ -58,13 +58,11 @@ func (c *PieceHPContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
+	c.Value = num
 	return nil
 }
 
@@ -88,13 +86,11 @@ func (c *PieceMPContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
+	c.Value = num
 	return nil
 }
 
@@ -118,13 +114,11 @@ func (c *PieceATKContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
+	c.Value = num
 	return nil
 }
 
@@ -224,14 +218,11 @@ func (p PieceActionState) FromMap(b *model.Board, m map[string]interface{}) erro
 	if err != nil {
 		return err
 	}
-	tmp, ok := m["deck_type"]
-	if !ok {
-		return errors.New("missing 'deck_type' field")
+	val, err := pkg.ToInt(m["deck_type"])
+	if err != nil {
+		return fmt.Errorf("deck_type: %w", err)
 	}
-	p.deckType, ok = tmp.(model.DeckType)
-	if !ok {
-		return errors.New("'deck_type' must be model.DeckType")
-	}
+	p.deckType = model.DeckType(val)
 	p.value, err = pkg.ToInt(m["value"])
 	if err != nil {
 		return err

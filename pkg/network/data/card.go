@@ -5,7 +5,6 @@ import (
 )
 
 type Card struct {
-	Placed int       `json:"placed"`
 	Type   int       `json:"type"`
 	Tag    string    `json:"tag"`
 	UUID   uuid.UUID `json:"uuid"`

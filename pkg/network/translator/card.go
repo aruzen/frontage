@@ -3,7 +3,6 @@ package translator
 import (
 	"frontage/pkg"
 	"frontage/pkg/engine/impl/card"
-	"frontage/pkg/engine/model"
 	"frontage/pkg/network/data"
 	"frontage/pkg/network/repository"
 )
@@ -28,7 +27,6 @@ func (cr *CardTranslator) ToPieceModel(d data.PieceCard) (card.MutablePiece, err
 	}
 
 	piece := p.Mirror(d.UUID)
-	piece.SetPlaced(model.Placed(d.Placed))
 	piece.SetPlayCost(material)
 	piece.SetATK(d.Atk)
 	piece.SetHP(d.Hp)
@@ -44,11 +42,10 @@ func (cr *CardTranslator) FromPieceModel(m card.Piece) (data.PieceCard, error) {
 
 	return data.PieceCard{
 		Card: data.Card{
-			Placed: int(m.Placed()),
-			Type:   int(m.Type()),
-			Tag:    string(m.LocalizeTag()),
-			UUID:   m.Id(),
-			Cost:   material,
+			Type: int(m.Type()),
+			Tag:  string(m.LocalizeTag()),
+			UUID: m.Id(),
+			Cost: material,
 		},
 		Atk: m.ATK(),
 		Hp:  m.HP(),

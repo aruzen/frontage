@@ -73,13 +73,11 @@ func (c *PieceSummonActionContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["point"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("point: %w", err)
-		}
-		c.Point = p
+	p, err := pkg.PointFromMap(m["point"])
+	if err != nil {
+		return fmt.Errorf("point: %w", err)
 	}
+	c.Point = p
 	return nil
 }
 
@@ -93,13 +91,11 @@ func (c *PieceMoveActionContext) FromMap(m map[string]interface{}) error {
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["point"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("point: %w", err)
-		}
-		c.Point = p
+	p, err := pkg.PointFromMap(m["point"])
+	if err != nil {
+		return fmt.Errorf("point: %w", err)
 	}
+	c.Point = p
 	return nil
 }
 
@@ -111,22 +107,17 @@ func (c PieceAttackActionContext) ToMap() map[string]interface{} {
 }
 
 func (c *PieceAttackActionContext) FromMap(m map[string]interface{}) error {
-	if err := c.BaseEffectContext.FromMap(m); err != nil {
+	var err error
+	if err = c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
-	if v, ok := m["point"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("point: %w", err)
-		}
-		c.Point = p
+	c.Point, err = pkg.PointFromMap(m["point"])
+	if err != nil {
+		return fmt.Errorf("point: %w", err)
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		c.Value = num
+	c.Value, err = pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
 	return nil
 }
@@ -139,20 +130,22 @@ func (s PieceSummonActionState) ToMap() map[string]interface{} {
 	}
 }
 
-func (s *PieceSummonActionState) FromMap(m map[string]interface{}) error {
-	if v, ok := m["piece_id"]; ok {
-		id, err := uuid.Parse(fmt.Sprintf("%v", v))
-		if err != nil {
-			return fmt.Errorf("piece_id: %w", err)
-		}
-		s.pieceID = id
+func (s *PieceSummonActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	id, err := pkg.ToUUID(m["piece_id"])
+	if err != nil {
+		return fmt.Errorf("piece_id: %w", err)
 	}
-	if v, ok := m["point"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("point: %w", err)
+	s.pieceID = id
+	p, err := pkg.PointFromMap(m["point"])
+	if err != nil {
+		return fmt.Errorf("point: %w", err)
+	}
+	s.point = p
+
+	if b != nil {
+		if piece, ok := b.GetPiece(id); ok {
+			s.piece = piece
 		}
-		s.point = p
 	}
 	return nil
 }
@@ -165,27 +158,27 @@ func (s PieceMoveActionState) ToMap() map[string]interface{} {
 	}
 }
 
-func (s *PieceMoveActionState) FromMap(m map[string]interface{}) error {
-	if v, ok := m["piece_id"]; ok {
-		id, err := uuid.Parse(fmt.Sprintf("%v", v))
-		if err != nil {
-			return fmt.Errorf("piece_id: %w", err)
-		}
-		s.pieceID = id
+func (s *PieceMoveActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	id, err := pkg.ToUUID(m["piece_id"])
+	if err != nil {
+		return fmt.Errorf("piece_id: %w", err)
 	}
-	if v, ok := m["from"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("from: %w", err)
-		}
-		s.from = p
+	s.pieceID = id
+	from, err := pkg.PointFromMap(m["from"])
+	if err != nil {
+		return fmt.Errorf("from: %w", err)
 	}
-	if v, ok := m["to"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("to: %w", err)
+	to, err := pkg.PointFromMap(m["to"])
+	if err != nil {
+		return fmt.Errorf("to: %w", err)
+	}
+	s.from = from
+	s.to = to
+
+	if b != nil {
+		if piece, ok := b.GetPiece(id); ok {
+			s.piece = piece
 		}
-		s.to = p
 	}
 	return nil
 }
@@ -202,35 +195,34 @@ func (s PieceAttackActionState) ToMap() map[string]interface{} {
 	return result
 }
 
-func (s *PieceAttackActionState) FromMap(m map[string]interface{}) error {
-	if v, ok := m["piece_id"]; ok {
-		id, err := uuid.Parse(fmt.Sprintf("%v", v))
-		if err != nil {
-			return fmt.Errorf("piece_id: %w", err)
-		}
-		s.pieceID = id
+func (s *PieceAttackActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	id, err := pkg.ToUUID(m["piece_id"])
+	if err != nil {
+		return fmt.Errorf("piece_id: %w", err)
 	}
-	if v, ok := m["point"]; ok {
-		p, err := pkg.PointFromMap(v)
-		if err != nil {
-			return fmt.Errorf("point: %w", err)
-		}
-		s.point = p
+	s.pieceID = id
+	p, err := pkg.PointFromMap(m["point"])
+	if err != nil {
+		return fmt.Errorf("point: %w", err)
 	}
-	if v, ok := m["value"]; ok {
-		num, err := pkg.ToInt(v)
-		if err != nil {
-			return fmt.Errorf("value: %w", err)
-		}
-		s.value = num
+	s.point = p
+	num, err := pkg.ToInt(m["value"])
+	if err != nil {
+		return fmt.Errorf("value: %w", err)
 	}
-	if v, ok := m["decrease_hp_state"]; ok {
-		if mm, ok := v.(map[string]interface{}); ok {
+	s.value = num
+	/*
+		if mm, ok := m["decrease_hp_state"].(map[string]interface{}); ok {
 			child := &PieceOperateActionState{}
 			if err := child.FromMap(mm); err != nil {
 				return fmt.Errorf("decrease_hp_state: %w", err)
 			}
 			s.decreaseHPState = child
+		}
+	*/
+	if b != nil {
+		if piece, ok := b.GetPiece(id); ok {
+			s.piece = piece
 		}
 	}
 	return nil

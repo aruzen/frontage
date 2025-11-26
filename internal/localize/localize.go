@@ -7,7 +7,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-//go:embed locale.*.toml
+// TODO go:embed locale.*.toml
 var LocaleFS embed.FS
 
 func InitializeLocales() {

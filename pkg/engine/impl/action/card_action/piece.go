@@ -8,13 +8,14 @@ import (
 	"frontage/pkg/engine/impl/card"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
+	"github.com/google/uuid"
 	"log/slog"
 )
 
 type PieceActionState struct {
+	holder   uuid.UUID
 	deckType model.DeckType
-	holder   int
-	card     card.MutablePiece
+	card     uuid.UUID
 	value    int
 }
 
@@ -165,14 +166,66 @@ func (PieceATKIncreaseAction) Tag() logic.EffectActionTag {
 func (PieceATKDecreaseAction) Tag() logic.EffectActionTag {
 	return action.CARD_PIECE_ATK_DECREASE_ACTION
 }
-func (PieceATKFixAction) Tag() logic.EffectActionTag { return action.CARD_PIECE_ATK_FIX_ACTION }
+func (PieceATKFixAction) Tag() logic.EffectActionTag          { return action.CARD_PIECE_ATK_FIX_ACTION }
+func (a PieceHPIncreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceHPDecreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceHPFixAction) LocalizeTag() pkg.LocalizeTag       { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMPIncreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMPDecreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMPFixAction) LocalizeTag() pkg.LocalizeTag       { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceATKIncreaseAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceATKDecreaseAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceATKFixAction) LocalizeTag() pkg.LocalizeTag      { return pkg.LocalizeTag(a.Tag()) }
 
-func (p PieceActionState) HolderIndex() int {
+func (p PieceActionState) HolderId() uuid.UUID {
 	return p.holder
 }
 
-func (p PieceActionState) Card() card.Piece {
+func (p PieceActionState) Holder(b *model.Board) *model.LocalPlayer {
+	player, ok := b.FindPlayer(p.holder)
+	if !ok {
+		slog.Warn("player not found.")
+		return nil
+	}
+
+	deckPlayer, ok := player.(*model.LocalPlayer)
+	if !ok {
+		slog.Warn("player does not support deck operations.")
+		return nil
+	}
+	return deckPlayer
+}
+
+func (p PieceActionState) CardID() uuid.UUID {
 	return p.card
+}
+
+func (p PieceActionState) DeckAndCard(b *model.Board) (*model.Cards, card.Piece) {
+	player := p.Holder(b)
+	if player == nil {
+		slog.Warn("player not found.")
+		return nil, nil
+	}
+
+	deck := player.GetDeck(p.deckType)
+	if deck == nil {
+		slog.Warn("deck is nil for holder", "holder", p.holder, "deckType", p.deckType)
+		return nil, nil
+	}
+
+	c, ok := deck.FindById(p.card)
+	if !ok {
+		slog.Warn("deck does not contain card", "card", p.card)
+		return nil, nil
+	}
+
+	piece, ok := c.(card.Piece)
+	if !ok {
+		slog.Warn("card does not piece", "card", p.card)
+		return nil, nil
+	}
+
+	return deck, piece
 }
 
 func (p PieceActionState) Value() int {
@@ -185,57 +238,32 @@ func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(ca
 	}
 
 	next := board.Next()
-	cloned := state.card.Copy()
-	mutate(cloned)
-
-	players := next.Players()
-	if state.holder < 0 || state.holder >= len(players) {
-		slog.Warn("invalid holder index for piece update.", "holder", state.holder)
-		return next
+	player := state.Holder(next)
+	if player == nil {
+		slog.Warn("player not found")
+		return board
 	}
-
-	player := players[state.holder]
-	deckPlayer, ok := player.(model.DeckPlayer)
-	if !ok {
-		slog.Warn("player does not support deck operations.")
-		return next
+	deck, card := state.DeckAndCard(next)
+	if deck == nil || card == nil {
+		slog.Warn("deck or card is nil")
+		return board
 	}
-	deck := deckPlayer.GetDeck(state.deckType)
-	if deck == nil {
-		slog.Warn("deck is nil for holder", "holder", state.holder, "deckType", state.deckType)
-		return next
-	}
+	mut := card.Copy()
 
-	if !deck.Update(cloned) {
-		slog.Warn("failed to update card in deck.", "deckType", state.deckType, "cardID", cloned.Id())
+	mutate(mut)
+
+	if !deck.Update(mut) {
+		slog.Warn("failed to update card in deck.", "deckType", state.deckType, "cardID", mut.Id())
 	}
 
 	return next
 }
 
-func (p baseHPAction) MakeState(holder int, deckType model.DeckType, card card.MutablePiece, value int) PieceActionState {
+func NewPieceActionState(holder model.Player, deckType model.DeckType, card card.MutablePiece, value int) PieceActionState {
 	return PieceActionState{
 		deckType: deckType,
-		holder:   holder,
-		card:     card,
-		value:    value,
-	}
-}
-
-func (p baseMPAction) MakeState(holder int, deckType model.DeckType, card card.MutablePiece, value int) PieceActionState {
-	return PieceActionState{
-		deckType: deckType,
-		holder:   holder,
-		card:     card,
-		value:    value,
-	}
-}
-
-func (p baseATKAction) MakeState(holder int, deckType model.DeckType, card card.MutablePiece, value int) PieceActionState {
-	return PieceActionState{
-		deckType: deckType,
-		holder:   holder,
-		card:     card,
+		holder:   holder.ID(),
+		card:     card.Id(),
 		value:    value,
 	}
 }
@@ -257,7 +285,7 @@ func (p PieceHPIncreaseAction) Solve(board *model.Board, state interface{}, cont
 	}
 
 	board = updatePieceCard(board, pieceState, func(m card.MutablePiece) {
-		m.SetHP(pieceState.card.HP() + hpContext.Value)
+		m.SetHP(m.HP() + hpContext.Value)
 	})
 	return board, logic.Summary{"delta_hp": hpContext.Value}
 }
@@ -270,7 +298,7 @@ func (p PieceHPDecreaseAction) Solve(board *model.Board, state interface{}, cont
 	}
 
 	board = updatePieceCard(board, pieceState, func(m card.MutablePiece) {
-		m.SetHP(pieceState.card.HP() - hpContext.Value)
+		m.SetHP(m.HP() - hpContext.Value)
 	})
 	return board, logic.Summary{"delta_hp": -hpContext.Value}
 }
@@ -305,7 +333,7 @@ func (p PieceMPIncreaseAction) Solve(board *model.Board, state interface{}, cont
 	}
 
 	board = updatePieceCard(board, pieceState, func(m card.MutablePiece) {
-		m.SetMP(pieceState.card.MP() + mpContext.Value)
+		m.SetMP(m.MP() + mpContext.Value)
 	})
 	return board, logic.Summary{"delta_mp": mpContext.Value}
 }
@@ -318,7 +346,7 @@ func (p PieceMPDecreaseAction) Solve(board *model.Board, state interface{}, cont
 	}
 
 	board = updatePieceCard(board, pieceState, func(m card.MutablePiece) {
-		m.SetMP(pieceState.card.MP() - mpContext.Value)
+		m.SetMP(m.MP() - mpContext.Value)
 	})
 	return board, logic.Summary{"delta_mp": -mpContext.Value}
 }
@@ -353,7 +381,7 @@ func (p PieceATKIncreaseAction) Solve(board *model.Board, state interface{}, con
 	}
 
 	board = updatePieceCard(board, pieceState, func(m card.MutablePiece) {
-		m.SetATK(pieceState.card.ATK() + atkContext.Value)
+		m.SetATK(m.ATK() + atkContext.Value)
 	})
 	return board, logic.Summary{"delta_atk": atkContext.Value}
 }
@@ -366,7 +394,7 @@ func (p PieceATKDecreaseAction) Solve(board *model.Board, state interface{}, con
 	}
 
 	board = updatePieceCard(board, pieceState, func(m card.MutablePiece) {
-		m.SetATK(pieceState.card.ATK() - atkContext.Value)
+		m.SetATK(m.ATK() - atkContext.Value)
 	})
 	return board, logic.Summary{"delta_atk": -atkContext.Value}
 }

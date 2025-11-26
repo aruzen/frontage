@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"frontage/pkg"
 	"frontage/pkg/engine/model"
 )
 
@@ -15,42 +16,51 @@ type systemNoticeAction struct {
 }
 
 func (systemNoticeAction) Tag() EffectActionTag { return SYSTEM_NOTICE_ACTION_TAG }
+func (systemNoticeAction) LocalizeTag() pkg.LocalizeTag {
+	return pkg.LocalizeTag(SYSTEM_NOTICE_ACTION_TAG)
+}
 
 type GameStartAction struct {
 	systemNoticeAction
 }
 
-func (GameStartAction) Tag() EffectActionTag { return GAME_START_ACTION_TAG }
+func (GameStartAction) Tag() EffectActionTag           { return GAME_START_ACTION_TAG }
+func (a GameStartAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 type GameFinishAction struct {
 	systemNoticeAction
 }
 
-func (GameFinishAction) Tag() EffectActionTag { return GAME_FINISH_ACTION_TAG }
+func (GameFinishAction) Tag() EffectActionTag           { return GAME_FINISH_ACTION_TAG }
+func (a GameFinishAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 type TurnStartAction struct {
 	systemNoticeAction
 }
 
-func (TurnStartAction) Tag() EffectActionTag { return TURN_START_ACTION_TAG }
+func (TurnStartAction) Tag() EffectActionTag           { return TURN_START_ACTION_TAG }
+func (a TurnStartAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 type TurnEndAction struct {
 	systemNoticeAction
 }
 
-func (TurnEndAction) Tag() EffectActionTag { return TURN_END_ACTION_TAG }
+func (TurnEndAction) Tag() EffectActionTag           { return TURN_END_ACTION_TAG }
+func (a TurnEndAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 type PlayerWinAction struct {
 	systemNoticeAction
 }
 
-func (PlayerWinAction) Tag() EffectActionTag { return PLAYER_WIN_ACTION_TAG }
+func (PlayerWinAction) Tag() EffectActionTag           { return PLAYER_WIN_ACTION_TAG }
+func (a PlayerWinAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 type PlayerLoseAction struct {
 	systemNoticeAction
 }
 
-func (PlayerLoseAction) Tag() EffectActionTag { return PLAYER_LOSE_ACTION_TAG }
+func (PlayerLoseAction) Tag() EffectActionTag           { return PLAYER_LOSE_ACTION_TAG }
+func (a PlayerLoseAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 func (s SystemNoticeContext) IsCanceled() bool {
 	return false

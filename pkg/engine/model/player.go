@@ -84,6 +84,8 @@ type LocalPlayer struct {
 	materials          Materials
 }
 
+var _ Player = &LocalPlayer{}
+
 func NewLocalPlayer(id uuid.UUID, mainDeck Cards, subDeck Cards) *LocalPlayer {
 	return &LocalPlayer{
 		id:           id,
@@ -145,7 +147,7 @@ func (p *LocalPlayer) GetDeck(deckType DeckType) *Cards {
 	return nil
 }
 
-func (p *LocalPlayer) Find(card Card) (DeckType, int, bool) {
+func (p *LocalPlayer) FindCard(card Card) (DeckType, int, bool) {
 	for _, deck := range p.Decks() {
 		for i, c := range *deck.Deck {
 			if c.Id() == card.Id() {
@@ -157,11 +159,11 @@ func (p *LocalPlayer) Find(card Card) (DeckType, int, bool) {
 }
 
 func (p *LocalPlayer) HasCard(card Card) bool {
-	_, _, found := p.Find(card)
+	_, _, found := p.FindCard(card)
 	return found
 }
 
-func (p *LocalPlayer) Set(deckType DeckType, idx int, card Card) bool {
+func (p *LocalPlayer) SetCard(deckType DeckType, idx int, card Card) bool {
 	deck := p.GetDeck(deckType)
 	if deck == nil {
 		return false
@@ -173,7 +175,7 @@ func (p *LocalPlayer) Set(deckType DeckType, idx int, card Card) bool {
 	return true
 }
 
-func (p *LocalPlayer) Update(card Card) bool {
+func (p *LocalPlayer) UpdateCard(card Card) bool {
 	for _, deck := range p.Decks() {
 		idx := -1
 		for i, c := range *deck.Deck {

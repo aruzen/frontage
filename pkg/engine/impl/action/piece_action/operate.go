@@ -120,15 +120,24 @@ type PieceATKDecreaseAction struct{ basePieceATKAction }
 
 type PieceATKFixAction struct{ basePieceATKAction }
 
-func (PieceHPIncreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_HP_INCREASE_ACTION }
-func (PieceHPDecreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_HP_DECREASE_ACTION }
-func (PieceHPFixAction) Tag() logic.EffectActionTag       { return action.ENTITY_HP_FIX_ACTION }
-func (PieceMPIncreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_MP_INCREASE_ACTION }
-func (PieceMPDecreaseAction) Tag() logic.EffectActionTag  { return action.ENTITY_MP_DECREASE_ACTION }
-func (PieceMPFixAction) Tag() logic.EffectActionTag       { return action.ENTITY_MP_FIX_ACTION }
-func (PieceATKIncreaseAction) Tag() logic.EffectActionTag { return action.ENTITY_ATK_INCREASE_ACTION }
-func (PieceATKDecreaseAction) Tag() logic.EffectActionTag { return action.ENTITY_ATK_DECREASE_ACTION }
-func (PieceATKFixAction) Tag() logic.EffectActionTag      { return action.ENTITY_ATK_FIX_ACTION }
+func (PieceHPIncreaseAction) Tag() logic.EffectActionTag      { return action.ENTITY_HP_INCREASE_ACTION }
+func (PieceHPDecreaseAction) Tag() logic.EffectActionTag      { return action.ENTITY_HP_DECREASE_ACTION }
+func (PieceHPFixAction) Tag() logic.EffectActionTag           { return action.ENTITY_HP_FIX_ACTION }
+func (PieceMPIncreaseAction) Tag() logic.EffectActionTag      { return action.ENTITY_MP_INCREASE_ACTION }
+func (PieceMPDecreaseAction) Tag() logic.EffectActionTag      { return action.ENTITY_MP_DECREASE_ACTION }
+func (PieceMPFixAction) Tag() logic.EffectActionTag           { return action.ENTITY_MP_FIX_ACTION }
+func (PieceATKIncreaseAction) Tag() logic.EffectActionTag     { return action.ENTITY_ATK_INCREASE_ACTION }
+func (PieceATKDecreaseAction) Tag() logic.EffectActionTag     { return action.ENTITY_ATK_DECREASE_ACTION }
+func (PieceATKFixAction) Tag() logic.EffectActionTag          { return action.ENTITY_ATK_FIX_ACTION }
+func (a PieceHPIncreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceHPDecreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceHPFixAction) LocalizeTag() pkg.LocalizeTag       { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMPIncreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMPDecreaseAction) LocalizeTag() pkg.LocalizeTag  { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMPFixAction) LocalizeTag() pkg.LocalizeTag       { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceATKIncreaseAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceATKDecreaseAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceATKFixAction) LocalizeTag() pkg.LocalizeTag      { return pkg.LocalizeTag(a.Tag()) }
 
 func (e PieceOperateActionState) Piece() model.MutablePiece {
 	return e.piece

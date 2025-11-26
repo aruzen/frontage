@@ -130,10 +130,14 @@ type PieceInvasionAction struct {
 	logic.BaseAction[PieceAttackActionState, PieceAttackActionContext]
 }
 
-func (PieceSummonAction) Tag() logic.EffectActionTag   { return action.ENTITY_SUMMON_ACTION }
-func (PieceMoveAction) Tag() logic.EffectActionTag     { return action.ENTITY_MOVE_ACTION }
-func (PieceAttackAction) Tag() logic.EffectActionTag   { return action.ENTITY_ATTACK_ACTION }
-func (PieceInvasionAction) Tag() logic.EffectActionTag { return action.ENTITY_INVASION_ACTION }
+func (PieceSummonAction) Tag() logic.EffectActionTag       { return action.ENTITY_SUMMON_ACTION }
+func (PieceMoveAction) Tag() logic.EffectActionTag         { return action.ENTITY_MOVE_ACTION }
+func (PieceAttackAction) Tag() logic.EffectActionTag       { return action.ENTITY_ATTACK_ACTION }
+func (PieceInvasionAction) Tag() logic.EffectActionTag     { return action.ENTITY_INVASION_ACTION }
+func (a PieceSummonAction) LocalizeTag() pkg.LocalizeTag   { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceMoveAction) LocalizeTag() pkg.LocalizeTag     { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceAttackAction) LocalizeTag() pkg.LocalizeTag   { return pkg.LocalizeTag(a.Tag()) }
+func (a PieceInvasionAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
 func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceSummonActionState); ok {

@@ -2,6 +2,7 @@ package model
 
 import (
 	"frontage/pkg"
+	"github.com/google/uuid"
 	"math/rand"
 )
 
@@ -46,6 +47,34 @@ func (cs Cards) FindAll(pred func(Card) bool) (Cards, bool) {
 	result := make(Cards, 0)
 	for _, card := range cs {
 		if pred(card) {
+			result = append(result, card)
+		}
+	}
+	return result, len(result) > 0
+}
+
+// FindById returns the first card matching the given UUID.
+func (cs Cards) FindById(id uuid.UUID) (Card, bool) {
+	for _, card := range cs {
+		if card.Id() == id {
+			return card, true
+		}
+	}
+	return nil, false
+}
+
+// FindAllById returns all cards whose Id is contained in ids.
+func (cs Cards) FindAllById(ids []uuid.UUID) (Cards, bool) {
+	if len(ids) == 0 {
+		return nil, false
+	}
+	set := make(map[uuid.UUID]struct{}, len(ids))
+	for _, id := range ids {
+		set[id] = struct{}{}
+	}
+	result := make(Cards, 0)
+	for _, card := range cs {
+		if _, ok := set[card.Id()]; ok {
 			result = append(result, card)
 		}
 	}
@@ -110,6 +139,36 @@ func (cs *Cards) RemoveAll(pred func(Card) bool) int {
 	return count
 }
 
+// RemoveById removes the first card whose Id matches id.
+func (cs *Cards) RemoveById(id uuid.UUID) bool {
+	for i := len(*cs) - 1; i >= 0; i-- {
+		if (*cs)[i].Id() == id {
+			*cs = append((*cs)[:i], (*cs)[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveAllById removes all cards whose Id is contained in ids.
+func (cs *Cards) RemoveAllById(ids []uuid.UUID) int {
+	if len(ids) == 0 {
+		return 0
+	}
+	set := make(map[uuid.UUID]struct{}, len(ids))
+	for _, id := range ids {
+		set[id] = struct{}{}
+	}
+	count := 0
+	for i := len(*cs) - 1; i >= 0; i-- {
+		if _, ok := set[(*cs)[i].Id()]; ok {
+			*cs = append((*cs)[:i], (*cs)[i+1:]...)
+			count++
+		}
+	}
+	return count
+}
+
 func (cs *Cards) UnorderdRemoveCards(targets Cards) (int, bool) {
 	count := 0
 	for i := len(*cs) - 1; i >= 0; i-- {
@@ -161,6 +220,37 @@ func (cs *Cards) SearchAll(pred func(Card) bool) Cards {
 	var removed Cards
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
+			removed = append(removed, (*cs)[i])
+			*cs = append((*cs)[:i], (*cs)[i+1:]...)
+		}
+	}
+	return removed
+}
+
+// SearchById removes and returns the first card whose Id matches id (searching from the end, like SearchTop).
+func (cs *Cards) SearchById(id uuid.UUID) (Card, bool) {
+	for i := len(*cs) - 1; i >= 0; i-- {
+		if (*cs)[i].Id() == id {
+			card := (*cs)[i]
+			*cs = append((*cs)[:i], (*cs)[i+1:]...)
+			return card, true
+		}
+	}
+	return nil, false
+}
+
+// SearchAllById removes and returns all cards whose Id is contained in ids.
+func (cs *Cards) SearchAllById(ids []uuid.UUID) Cards {
+	if len(ids) == 0 {
+		return nil
+	}
+	set := make(map[uuid.UUID]struct{}, len(ids))
+	for _, id := range ids {
+		set[id] = struct{}{}
+	}
+	var removed Cards
+	for i := len(*cs) - 1; i >= 0; i-- {
+		if _, ok := set[(*cs)[i].Id()]; ok {
 			removed = append(removed, (*cs)[i])
 			*cs = append((*cs)[:i], (*cs)[i+1:]...)
 		}

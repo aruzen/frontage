@@ -31,12 +31,12 @@ var (
 )
 
 var (
-	GAME_START_ACTION  logic.EffectActionTag = logic.GAME_START_ACTION
-	GAME_FINISH_ACTION logic.EffectActionTag = logic.GAME_FINISH_ACTION
-	TURN_START_ACTION  logic.EffectActionTag = logic.TURN_START_ACTION
-	TURN_END_ACTION    logic.EffectActionTag = logic.TURN_END_ACTION
-	PLAYER_WIN_ACTION  logic.EffectActionTag = logic.PLAYER_WIN_ACTION
-	PLAYER_LOSE_ACTION logic.EffectActionTag = logic.PLAYER_LOSE_ACTION
+	GAME_START_ACTION  logic.EffectActionTag = logic.GAME_START_ACTION_TAG
+	GAME_FINISH_ACTION logic.EffectActionTag = logic.GAME_FINISH_ACTION_TAG
+	TURN_START_ACTION  logic.EffectActionTag = logic.TURN_START_ACTION_TAG
+	TURN_END_ACTION    logic.EffectActionTag = logic.TURN_END_ACTION_TAG
+	PLAYER_WIN_ACTION  logic.EffectActionTag = logic.PLAYER_WIN_ACTION_TAG
+	PLAYER_LOSE_ACTION logic.EffectActionTag = logic.PLAYER_LOSE_ACTION_TAG
 )
 
 var effectActionTable map[logic.EffectActionTag]logic.EffectAction

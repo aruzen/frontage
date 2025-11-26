@@ -16,8 +16,6 @@ type GameInfo struct {
 }
 
 func Game(info GameInfo, playersData [2]data.Player) {
-	first := rand.Int() % 2
-	second := (first + 1) % 2
 	board := model.NewBoard(model.NewBoardInfo(pkg.Size{7, 7}, model.GENERATION_STRATEGY_SWAP), [2]model.Player{
 		model.NewLocalPlayer(playersData[first].Id, handler.InstantiationDeck(playersData[first].MainDeck), handler.InstantiationDeck(playersData[first].SubDeck)),
 		model.NewLocalPlayer(playersData[second].Id, handler.InstantiationDeck(playersData[second].MainDeck), handler.InstantiationDeck(playersData[second].SubDeck)),

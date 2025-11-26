@@ -135,61 +135,61 @@ func (PieceMoveAction) Tag() logic.EffectActionTag     { return action.ENTITY_MO
 func (PieceAttackAction) Tag() logic.EffectActionTag   { return action.ENTITY_ATTACK_ACTION }
 func (PieceInvasionAction) Tag() logic.EffectActionTag { return action.ENTITY_INVASION_ACTION }
 
-func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
+func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceSummonActionState); ok {
-		return &PieceSummonActionContext{event.BaseEffectContext{}, s.point, s.piece}
+		return &PieceSummonActionContext{event.BaseEffectContext{}, s.point, s.piece}, logic.Summary{"point": pointToMap(s.point)}
 	}
-	return nil
+	return nil, nil
 }
 
-func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) *model.Board {
+func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
 	_, c, ok := e.CastStateContext(state, context)
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	board = board.Next()
 	if !board.SetPiece(c.Point, c.Piece) {
-		return nil
+		return nil, nil
 	}
-	return board
+	return board, logic.Summary{"placed_at": pointToMap(c.Point)}
 }
 
-func (e PieceMoveAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
+func (e PieceMoveAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceMoveActionState); ok {
-		return &PieceSummonActionContext{event.BaseEffectContext{}, s.to, s.piece}
+		return &PieceSummonActionContext{event.BaseEffectContext{}, s.to, s.piece}, logic.Summary{"from": pointToMap(s.from), "to": pointToMap(s.to)}
 	}
-	return nil
+	return nil, nil
 }
 
-func (e PieceMoveAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) *model.Board {
+func (e PieceMoveAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	board = board.Next()
 
 	if !board.SetPiece(c.Point, s.piece) {
-		return nil
+		return nil, nil
 	}
-	return board
+	return board, logic.Summary{"to": pointToMap(c.Point)}
 }
 
-func (e PieceAttackAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
+func (e PieceAttackAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceMoveActionState); ok {
-		return &PieceSummonActionContext{event.BaseEffectContext{}, s.to, s.piece}
+		return &PieceSummonActionContext{event.BaseEffectContext{}, s.to, s.piece}, logic.Summary{"target": pointToMap(s.to)}
 	}
-	return nil
+	return nil, nil
 }
 
-func (e PieceAttackAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) *model.Board {
+func (e PieceAttackAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	board = board.Next()
 	s.decreaseHPState.piece = board.Entities()[c.Point.X][c.Point.Y].Copy()
 	s.decreaseHPState.value = c.Value
-	return board
+	return board, logic.Summary{"target": pointToMap(c.Point), "value": c.Value}
 }
 
 func (e PieceAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {

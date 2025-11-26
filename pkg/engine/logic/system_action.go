@@ -14,43 +14,43 @@ type systemNoticeAction struct {
 	BaseAction[SystemNoticeState, SystemNoticeContext]
 }
 
-func (systemNoticeAction) Tag() EffectActionTag { panic("implement me") }
+func (systemNoticeAction) Tag() EffectActionTag { return SYSTEM_NOTICE_ACTION_TAG }
 
 type GameStartAction struct {
 	systemNoticeAction
 }
 
-func (GameStartAction) Tag() EffectActionTag { return GAME_START_ACTION }
+func (GameStartAction) Tag() EffectActionTag { return GAME_START_ACTION_TAG }
 
 type GameFinishAction struct {
 	systemNoticeAction
 }
 
-func (GameFinishAction) Tag() EffectActionTag { return GAME_FINISH_ACTION }
+func (GameFinishAction) Tag() EffectActionTag { return GAME_FINISH_ACTION_TAG }
 
 type TurnStartAction struct {
 	systemNoticeAction
 }
 
-func (TurnStartAction) Tag() EffectActionTag { return TURN_START_ACTION }
+func (TurnStartAction) Tag() EffectActionTag { return TURN_START_ACTION_TAG }
 
 type TurnEndAction struct {
 	systemNoticeAction
 }
 
-func (TurnEndAction) Tag() EffectActionTag { return TURN_END_ACTION }
+func (TurnEndAction) Tag() EffectActionTag { return TURN_END_ACTION_TAG }
 
 type PlayerWinAction struct {
 	systemNoticeAction
 }
 
-func (PlayerWinAction) Tag() EffectActionTag { return PLAYER_WIN_ACTION }
+func (PlayerWinAction) Tag() EffectActionTag { return PLAYER_WIN_ACTION_TAG }
 
 type PlayerLoseAction struct {
 	systemNoticeAction
 }
 
-func (PlayerLoseAction) Tag() EffectActionTag { return PLAYER_LOSE_ACTION }
+func (PlayerLoseAction) Tag() EffectActionTag { return PLAYER_LOSE_ACTION_TAG }
 
 func (s SystemNoticeContext) IsCanceled() bool {
 	return false
@@ -70,19 +70,27 @@ func (s systemNoticeAction) MakeState() interface{} {
 	return SystemNoticeState{}
 }
 
-func (s systemNoticeAction) Act(state interface{}, beforeAction EffectAction, beforeContext EffectContext) EffectContext {
-	return &SystemNoticeContext{}
+func (s systemNoticeAction) Act(state interface{}, beforeAction EffectAction, beforeContext EffectContext) (EffectContext, Summary) {
+	return &SystemNoticeContext{}, nil
 }
 
-func (s systemNoticeAction) Solve(board *model.Board, state interface{}, context EffectContext) *model.Board {
-	return board
+func (s systemNoticeAction) Solve(board *model.Board, state interface{}, context EffectContext) (*model.Board, Summary) {
+	return board, nil
 }
 
 var (
-	GAME_START_ACTION  EffectActionTag = "system.game_start"
-	GAME_FINISH_ACTION EffectActionTag = "system.game_finish"
-	TURN_START_ACTION  EffectActionTag = "system.turn_start"
-	TURN_END_ACTION    EffectActionTag = "system.turn_end"
-	PLAYER_WIN_ACTION  EffectActionTag = "system.player_win"
-	PLAYER_LOSE_ACTION EffectActionTag = "system.player_lose"
+	SYSTEM_NOTICE_ACTION_TAG EffectActionTag = "system.notice"
+	GAME_START_ACTION_TAG    EffectActionTag = "system.game_start"
+	GAME_FINISH_ACTION_TAG   EffectActionTag = "system.game_finish"
+	TURN_START_ACTION_TAG    EffectActionTag = "system.turn_start"
+	TURN_END_ACTION_TAG      EffectActionTag = "system.turn_end"
+	PLAYER_WIN_ACTION_TAG    EffectActionTag = "system.player_win"
+	PLAYER_LOSE_ACTION_TAG   EffectActionTag = "system.player_lose"
+
+	GAME_START_ACTION  = GameStartAction{}
+	GAME_FINISH_ACTION = GameFinishAction{}
+	TURN_START_ACTION  = TurnStartAction{}
+	TURN_END_ACTION    = TurnEndAction{}
+	PLAYER_WIN_ACTION  = PlayerWinAction{}
+	PLAYER_LOSE_ACTION = PlayerLoseAction{}
 )

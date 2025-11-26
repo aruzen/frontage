@@ -20,7 +20,7 @@ func (mt *MaterialsTranslator) ToModel(d data.Materials) (model.Materials, error
 	return result, nil
 }
 
-func (mt *MaterialsTranslator) ToData(m model.Materials) (data.Materials, error) {
+func (mt *MaterialsTranslator) FromModel(m model.Materials) (data.Materials, error) {
 	result := make(data.Materials)
 	for k, v := range m {
 		result[string(k.Tag())] = v

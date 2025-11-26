@@ -3,10 +3,10 @@ package game_api
 import "frontage/pkg/network/data"
 
 type ActEventPayload struct {
-	result  data.ActionResult
-	summary []data.EventSummary
+	Result  data.ActionResult
+	Summary []data.EventSummary
 }
 
 type ActEventPacket struct {
-	events []ActEventPayload
+	Events []ActEventPayload
 }

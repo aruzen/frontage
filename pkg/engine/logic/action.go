@@ -23,6 +23,13 @@ type EffectContext interface {
 	FromMap(map[string]interface{}) error
 }
 
+type Summary map[string]interface{}
+
+type ActionSummary struct {
+	Action Action
+	Data   Summary
+}
+
 type ActionResult struct {
 	Action  Action
 	Context EffectContext
@@ -31,14 +38,14 @@ type ActionResult struct {
 type EffectAction interface {
 	Action
 	Tag() EffectActionTag
-	Act(state interface{}, beforeAction EffectAction, beforeContext EffectContext) EffectContext
-	Solve(board *model.Board, state interface{}, context EffectContext) *model.Board
+	Act(state interface{}, beforeAction EffectAction, beforeContext EffectContext) (EffectContext, Summary)
+	Solve(board *model.Board, state interface{}, context EffectContext) (*model.Board, Summary)
 }
 
 type ModifyAction interface {
 	Action
 	Tag() ModifyActionTag
-	Modify(state interface{}, context EffectContext) EffectContext
+	Modify(state interface{}, context EffectContext) (EffectContext, Summary)
 }
 
 type MultiEffectAction interface {
@@ -51,13 +58,9 @@ type BaseAction[StateType any, ContextType any] struct {
 	event_base.BaseWantContext[ContextType]
 }
 
-// ItemTag はデフォルトで空文字を返す。具体的なタグを持つ Action は個別に上書きすること。
-func (a *BaseAction[StateType, ContextType]) ItemTag() pkg.LocalizeTag {
+// LocalizeTag はデフォルトで空文字を返す。具体的なタグを持つ Action は個別に上書きすること。
+func (a BaseAction[StateType, ContextType]) LocalizeTag() pkg.LocalizeTag {
 	return ""
-}
-
-func (a *BaseAction[StateType, ContextType]) Children() []EffectAction {
-	return nil
 }
 
 func (a *BaseAction[StateType, ContextType]) CastStateContext(state interface{}, context interface{}) (*StateType, *ContextType, bool) {

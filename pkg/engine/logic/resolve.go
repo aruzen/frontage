@@ -25,16 +25,24 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 		slog.Warn("IntegrityCheck failed.")
 		return
 	}
-	context := e.action.Act(e.State(), beforeEffect, beforeContext)
+	var summaries *[]ActionSummary
+	var tmpSummary Summary
+	*summaries = make([]ActionSummary, 0, 3)
+	es.Summaries = append(es.Summaries, summaries)
+
+	context, tmpSummary := e.action.Act(e.State(), beforeEffect, beforeContext)
+	appendSummary(summaries, e.action, tmpSummary)
+
 	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
-		context = e.modifier.Resolve(es, e.action, context)
+		context = e.modifier.Resolve(es, e.action, context, summaries)
 	}
 
-	if context.IsCanceled() {
+	if context == nil || context.IsCanceled() {
 		return
 	}
 
-	es.Board = e.action.Solve(es.Board, e.State(), context)
+	es.Board, tmpSummary = e.action.Solve(es.Board, e.State(), context)
+	appendSummary(summaries, e.action, tmpSummary)
 
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, *branch.state) {
@@ -44,18 +52,20 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 		branch.Resolve(es, e.action, context)
 	}
 
-	es.AppliedEffects = append(es.AppliedEffects, struct {
-		Action  Action
-		Context EffectContext
-	}{Action: e.action, Context: context})
+	es.AppliedEffects = append(es.AppliedEffects, ActionResult{
+		Action:  e.action,
+		Context: context,
+	})
 }
 
-func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context EffectContext) EffectContext {
+func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context EffectContext, summaries *[]ActionSummary) EffectContext {
 	if !IntegrityCheck(e.action, *e.state) {
 		slog.Warn("IntegrityCheck failed.")
 		return nil
 	}
-	context = e.action.Modify(*e.state, context)
+	context, tmpSummary := e.action.Modify(*e.state, context)
+	appendSummary(summaries, e.action, tmpSummary)
+
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, *branch.state) {
 			slog.Warn("IntegrityCheck failed.")
@@ -63,5 +73,14 @@ func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context Effe
 		}
 		branch.Resolve(es, effect, context)
 	}
+
+	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
+		context = e.modifier.Resolve(es, effect, context, summaries)
+	}
+
 	return context
+}
+
+func appendSummary(summaries *[]ActionSummary, action Action, summary Summary) {
+	*summaries = append(*summaries, ActionSummary{Action: action, Data: summary})
 }

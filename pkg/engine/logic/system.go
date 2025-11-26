@@ -21,6 +21,7 @@ type EventSystem struct {
 	active         Event
 	isRunning      bool
 	AppliedEffects []ActionResult
+	Summaries      []*[]ActionSummary
 }
 
 func PreListenHelper(es *EventSystem, maybe interface{}, action Action, state interface{}) {

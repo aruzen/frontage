@@ -36,8 +36,8 @@ func (cr *CardTranslator) ToPieceModel(d data.PieceCard) (card.MutablePiece, err
 	return piece, nil
 }
 
-func (cr *CardTranslator) ToPieceData(m card.Piece) (data.PieceCard, error) {
-	material, err := cr.materialsTran.ToData(m.PlayCost())
+func (cr *CardTranslator) FromPieceModel(m card.Piece) (data.PieceCard, error) {
+	material, err := cr.materialsTran.FromModel(m.PlayCost())
 	if err != nil {
 		return data.PieceCard{}, err
 	}

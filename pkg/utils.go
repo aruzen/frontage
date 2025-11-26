@@ -1,6 +1,9 @@
 package pkg
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/google/uuid"
+)
 
 import "log/slog"
 
@@ -122,6 +125,17 @@ func ToInt(v interface{}) (int, error) {
 	default:
 		return 0, fmt.Errorf("expected number, got %T", v)
 	}
+}
+
+func ToUUID(v interface{}) (uuid.UUID, error) {
+	if v == nil {
+		return uuid.Nil, fmt.Errorf("value is nil")
+	}
+	s, ok := v.(string)
+	if !ok {
+		return uuid.Nil, fmt.Errorf("expected string value, got %T", v)
+	}
+	return uuid.Parse(s)
 }
 
 // PointToMap converts pkg.Point to a generic map for serialization.

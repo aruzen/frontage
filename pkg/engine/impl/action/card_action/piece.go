@@ -1,6 +1,7 @@
 package card_action
 
 import (
+	"errors"
 	"fmt"
 	"frontage/internal/event"
 	"frontage/pkg"
@@ -13,10 +14,13 @@ import (
 )
 
 type PieceActionState struct {
-	holder   uuid.UUID
+	holderID uuid.UUID
+	cardID   uuid.UUID
 	deckType model.DeckType
-	card     uuid.UUID
 	value    int
+
+	holder *model.LocalPlayer
+	piece  card.Piece
 }
 
 type PieceHPContext struct {
@@ -178,58 +182,86 @@ func (a PieceATKDecreaseAction) LocalizeTag() pkg.LocalizeTag { return pkg.Local
 func (a PieceATKFixAction) LocalizeTag() pkg.LocalizeTag      { return pkg.LocalizeTag(a.Tag()) }
 
 func (p PieceActionState) HolderId() uuid.UUID {
+	return p.holderID
+}
+
+func (p PieceActionState) Holder() *model.LocalPlayer {
 	return p.holder
 }
 
-func (p PieceActionState) Holder(b *model.Board) *model.LocalPlayer {
-	player, ok := b.FindPlayer(p.holder)
-	if !ok {
-		slog.Warn("player not found.")
-		return nil
-	}
-
-	deckPlayer, ok := player.(*model.LocalPlayer)
-	if !ok {
-		slog.Warn("player does not support deck operations.")
-		return nil
-	}
-	return deckPlayer
-}
-
 func (p PieceActionState) CardID() uuid.UUID {
-	return p.card
+	return p.cardID
 }
 
-func (p PieceActionState) DeckAndCard(b *model.Board) (*model.Cards, card.Piece) {
-	player := p.Holder(b)
-	if player == nil {
-		slog.Warn("player not found.")
-		return nil, nil
-	}
+func (p PieceActionState) PieceCard() card.Piece {
+	return p.piece
+}
 
-	deck := player.GetDeck(p.deckType)
-	if deck == nil {
-		slog.Warn("deck is nil for holder", "holder", p.holder, "deckType", p.deckType)
-		return nil, nil
-	}
-
-	c, ok := deck.FindById(p.card)
-	if !ok {
-		slog.Warn("deck does not contain card", "card", p.card)
-		return nil, nil
-	}
-
-	piece, ok := c.(card.Piece)
-	if !ok {
-		slog.Warn("card does not piece", "card", p.card)
-		return nil, nil
-	}
-
-	return deck, piece
+func (p PieceActionState) DeckType() model.DeckType {
+	return p.deckType
 }
 
 func (p PieceActionState) Value() int {
 	return p.value
+}
+
+func (p PieceActionState) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"holder_id": p.holderID.String(),
+		"card_id":   p.cardID.String(),
+		"deck_type": p.DeckType(),
+		"value":     p.Value(),
+	}
+}
+
+func (p PieceActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	var err error
+	p.holderID, err = pkg.ToUUID(m["holder_id"])
+	if err != nil {
+		return err
+	}
+	p.cardID, err = pkg.ToUUID(m["card_id"])
+	if err != nil {
+		return err
+	}
+	tmp, ok := m["deck_type"]
+	if !ok {
+		return errors.New("missing 'deck_type' field")
+	}
+	p.deckType, ok = tmp.(model.DeckType)
+	if !ok {
+		return errors.New("'deck_type' must be model.DeckType")
+	}
+	p.value, err = pkg.ToInt(m["value"])
+	if err != nil {
+		return err
+	}
+
+	player, ok := b.FindPlayer(p.holderID)
+	if !ok {
+		return errors.New("player not found.")
+	}
+
+	p.holder, ok = player.(*model.LocalPlayer)
+	if !ok {
+		return errors.New("player does not support deck operations.")
+	}
+
+	deck := p.holder.GetDeck(p.deckType)
+	if deck == nil {
+		slog.Warn("deck is nil for holder", "holder", p.holderID, "deckType", p.deckType)
+	}
+
+	c, ok := deck.FindById(p.cardID)
+	if !ok {
+		return fmt.Errorf("deck does not contain card : %v", p.cardID)
+	}
+
+	p.piece, ok = c.(card.Piece)
+	if !ok {
+		return fmt.Errorf("card does not piece : %v", p.cardID)
+	}
+	return nil
 }
 
 func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(card.MutablePiece)) *model.Board {
@@ -238,17 +270,14 @@ func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(ca
 	}
 
 	next := board.Next()
-	player := state.Holder(next)
-	if player == nil {
-		slog.Warn("player not found")
+	holder := state.Holder()
+	deck := holder.GetDeck(state.DeckType())
+
+	if holder == nil {
+		slog.Warn("holder not found")
 		return board
 	}
-	deck, card := state.DeckAndCard(next)
-	if deck == nil || card == nil {
-		slog.Warn("deck or card is nil")
-		return board
-	}
-	mut := card.Copy()
+	mut := state.PieceCard().Copy()
 
 	mutate(mut)
 
@@ -259,11 +288,13 @@ func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(ca
 	return next
 }
 
-func NewPieceActionState(holder model.Player, deckType model.DeckType, card card.MutablePiece, value int) PieceActionState {
+func NewPieceActionState(holder *model.LocalPlayer, deckType model.DeckType, card card.MutablePiece, value int) PieceActionState {
 	return PieceActionState{
 		deckType: deckType,
-		holder:   holder.ID(),
-		card:     card.Id(),
+		holderID: holder.ID(),
+		holder:   holder,
+		cardID:   card.Id(),
+		piece:    card,
 		value:    value,
 	}
 }

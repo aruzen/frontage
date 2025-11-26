@@ -7,24 +7,41 @@ import (
 	"frontage/pkg/engine/impl/action"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
+	"github.com/google/uuid"
 )
 
 type PieceSummonActionState struct {
-	point pkg.Point
-	piece model.Piece
+	pieceID uuid.UUID
+	point   pkg.Point
+	piece   model.Piece
 }
+
+func (s PieceSummonActionState) Point() pkg.Point   { return s.point }
+func (s PieceSummonActionState) Piece() model.Piece { return s.piece }
 
 type PieceMoveActionState struct {
-	from, to pkg.Point
-	piece    model.Piece
+	pieceID uuid.UUID
+	from    pkg.Point
+	to      pkg.Point
+	piece   model.Piece
 }
 
+func (s PieceMoveActionState) From() pkg.Point    { return s.from }
+func (s PieceMoveActionState) To() pkg.Point      { return s.to }
+func (s PieceMoveActionState) Piece() model.Piece { return s.piece }
+
 type PieceAttackActionState struct {
-	decreaseHPState *PieceOperateActionState
+	pieceID         uuid.UUID
 	point           pkg.Point
-	piece           model.Piece
 	value           int
+	decreaseHPState *PieceOperateActionState
+	piece           model.Piece
 }
+
+func (s PieceAttackActionState) Point() pkg.Point                        { return s.point }
+func (s PieceAttackActionState) Value() int                              { return s.value }
+func (s PieceAttackActionState) DecreaseState() *PieceOperateActionState { return s.decreaseHPState }
+func (s PieceAttackActionState) Piece() model.Piece                      { return s.piece }
 
 type PieceSummonActionContext struct {
 	event.BaseEffectContext
@@ -110,6 +127,111 @@ func (c *PieceAttackActionContext) FromMap(m map[string]interface{}) error {
 			return fmt.Errorf("value: %w", err)
 		}
 		c.Value = num
+	}
+	return nil
+}
+
+// State mapping helpers
+func (s PieceSummonActionState) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"piece_id": s.pieceID.String(),
+		"point":    pkg.PointToMap(s.point),
+	}
+}
+
+func (s *PieceSummonActionState) FromMap(m map[string]interface{}) error {
+	if v, ok := m["piece_id"]; ok {
+		id, err := uuid.Parse(fmt.Sprintf("%v", v))
+		if err != nil {
+			return fmt.Errorf("piece_id: %w", err)
+		}
+		s.pieceID = id
+	}
+	if v, ok := m["point"]; ok {
+		p, err := pkg.PointFromMap(v)
+		if err != nil {
+			return fmt.Errorf("point: %w", err)
+		}
+		s.point = p
+	}
+	return nil
+}
+
+func (s PieceMoveActionState) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"piece_id": s.pieceID.String(),
+		"from":     pkg.PointToMap(s.from),
+		"to":       pkg.PointToMap(s.to),
+	}
+}
+
+func (s *PieceMoveActionState) FromMap(m map[string]interface{}) error {
+	if v, ok := m["piece_id"]; ok {
+		id, err := uuid.Parse(fmt.Sprintf("%v", v))
+		if err != nil {
+			return fmt.Errorf("piece_id: %w", err)
+		}
+		s.pieceID = id
+	}
+	if v, ok := m["from"]; ok {
+		p, err := pkg.PointFromMap(v)
+		if err != nil {
+			return fmt.Errorf("from: %w", err)
+		}
+		s.from = p
+	}
+	if v, ok := m["to"]; ok {
+		p, err := pkg.PointFromMap(v)
+		if err != nil {
+			return fmt.Errorf("to: %w", err)
+		}
+		s.to = p
+	}
+	return nil
+}
+
+func (s PieceAttackActionState) ToMap() map[string]interface{} {
+	result := map[string]interface{}{
+		"piece_id": s.pieceID.String(),
+		"point":    pkg.PointToMap(s.point),
+		"value":    s.value,
+	}
+	if s.decreaseHPState != nil {
+		result["decrease_hp_state"] = s.decreaseHPState.ToMap()
+	}
+	return result
+}
+
+func (s *PieceAttackActionState) FromMap(m map[string]interface{}) error {
+	if v, ok := m["piece_id"]; ok {
+		id, err := uuid.Parse(fmt.Sprintf("%v", v))
+		if err != nil {
+			return fmt.Errorf("piece_id: %w", err)
+		}
+		s.pieceID = id
+	}
+	if v, ok := m["point"]; ok {
+		p, err := pkg.PointFromMap(v)
+		if err != nil {
+			return fmt.Errorf("point: %w", err)
+		}
+		s.point = p
+	}
+	if v, ok := m["value"]; ok {
+		num, err := pkg.ToInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		s.value = num
+	}
+	if v, ok := m["decrease_hp_state"]; ok {
+		if mm, ok := v.(map[string]interface{}); ok {
+			child := &PieceOperateActionState{}
+			if err := child.FromMap(mm); err != nil {
+				return fmt.Errorf("decrease_hp_state: %w", err)
+			}
+			s.decreaseHPState = child
+		}
 	}
 	return nil
 }

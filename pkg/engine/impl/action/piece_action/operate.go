@@ -7,12 +7,34 @@ import (
 	"frontage/pkg/engine/impl/action"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
+	"github.com/google/uuid"
 	"log/slog"
 )
 
 type PieceOperateActionState struct {
-	piece model.MutablePiece
-	value int
+	pieceID uuid.UUID
+	piece   model.MutablePiece
+	value   int
+}
+
+func (s PieceOperateActionState) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"piece_id": s.pieceID.String(),
+		"value":    s.Value,
+	}
+}
+
+func (s *PieceOperateActionState) FromMap(m map[string]interface{}) error {
+	var err error
+	s.pieceID, err = pkg.ToUUID(m["piece_id"])
+	if err != nil {
+		return err
+	}
+	s.value, err = pkg.ToInt(m["value"])
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type PieceHPContext struct {

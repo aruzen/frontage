@@ -15,9 +15,12 @@ type Point struct {
 type LocalizeTag string
 
 type Localized interface {
-	Name() LocalizeTag
-	Description() LocalizeTag
-	Summery() []Localized
+	Tag() LocalizeTag
+}
+
+type PacketHeader struct {
+	Tag  uint16
+	Size uint32
 }
 
 func SizeToPoint(s Size) Point {

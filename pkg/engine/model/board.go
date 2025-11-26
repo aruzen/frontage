@@ -22,8 +22,8 @@ type Board struct {
 	info             *BoardInfo
 	beforeGeneration *Board
 	turn             int
-	phase            int
-	players          [2]*Player
+	side             int
+	players          [2]Player
 	structures       [][]Structure
 	structureTable   map[uuid.UUID]pkg.Point
 	entities         [][]Entity
@@ -37,7 +37,7 @@ func NewBoardInfo(size pkg.Size, strategy GenerationStrategy) *BoardInfo {
 	}
 }
 
-func NewBoard(info *BoardInfo, players [2]*Player) *Board {
+func NewBoard(info *BoardInfo, players [2]Player) *Board {
 	return &Board{
 		info:           info,
 		players:        players,
@@ -53,8 +53,8 @@ func (b *Board) Copy() *Board {
 	return &Board{
 		info:           b.info,
 		turn:           b.turn,
-		phase:          b.phase,
-		players:        [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
+		side:           b.side,
+		players:        [2]Player{b.players[0].Copy(), b.players[1].Copy()},
 		structures:     pkg.Copy2D(b.info.size, b.structures),
 		structureTable: pkg.CopyMap(b.structureTable),
 		entities:       pkg.Copy2D(b.info.size, b.entities),
@@ -65,7 +65,7 @@ func (b *Board) Copy() *Board {
 func (b *Board) Overwrite(src *Board) {
 	b.info = src.info
 	b.turn = src.turn
-	b.phase = src.phase
+	b.side = src.side
 	b.players[0] = src.players[0].Copy()
 	b.players[1] = src.players[1].Copy()
 	pkg.Overwrite2D(b.entities, src.entities)
@@ -90,8 +90,8 @@ func (b *Board) Next() *Board {
 			info:             b.info,
 			beforeGeneration: b,
 			turn:             b.turn,
-			phase:            b.phase,
-			players:          [2]*Player{b.players[0].Copy(), b.players[1].Copy()},
+			side:             b.side,
+			players:          [2]Player{b.players[0].Copy(), b.players[1].Copy()},
 			structures:       pkg.Copy2D(b.info.size, b.structures),
 			structureTable:   pkg.CopyMap(b.structureTable),
 			entities:         pkg.Copy2D(b.info.size, b.entities),
@@ -120,11 +120,20 @@ func (b *Board) Turn() int {
 }
 
 func (b *Board) Phase() int {
-	return b.phase
+	return b.side
 }
 
-func (b *Board) Players() [2]*Player {
+func (b *Board) Players() [2]Player {
 	return b.players
+}
+
+func (b *Board) FindPlayer(id uuid.UUID) (Player, bool) {
+	for _, p := range b.players {
+		if p != nil && p.ID() == id {
+			return p, true
+		}
+	}
+	return nil, false
 }
 
 func (b *Board) Structures() [][]Structure {
@@ -261,7 +270,7 @@ func (b *Board) UpdateEntity(entity Entity) bool {
 	return b.SetEntity(pos, entity)
 }
 
-func (b *Board) ActivePlayer() *Player {
+func (b *Board) ActivePlayer() Player {
 	return b.players[0]
 }
 

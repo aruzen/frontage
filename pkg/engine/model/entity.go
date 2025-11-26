@@ -11,7 +11,7 @@ type Entity interface {
 	HP() int
 	MP() int
 	ATK() int
-	Owner() *Player
+	Owner() Player
 
 	HaveSkill(s NamedSkill) bool
 	Skills() []Skill
@@ -42,7 +42,7 @@ type BaseEntity struct {
 	hp       int
 	mp       int
 	atk      int
-	owner    *Player
+	owner    Player
 
 	skills       []Skill
 	legalMoves   []pkg.Point
@@ -51,7 +51,7 @@ type BaseEntity struct {
 
 var _ MutableEntity = (*BaseEntity)(nil)
 
-func NewBaseEntity(owner *Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BaseEntity {
+func NewBaseEntity(owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BaseEntity {
 	entity := &BaseEntity{
 		id:           uuid.New(),
 		owner:        owner,
@@ -88,7 +88,7 @@ func (e *BaseEntity) ATK() int {
 	return e.atk
 }
 
-func (e *BaseEntity) Owner() *Player {
+func (e *BaseEntity) Owner() Player {
 	return e.owner
 }
 

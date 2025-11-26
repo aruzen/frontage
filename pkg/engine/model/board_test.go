@@ -25,7 +25,7 @@ func (d dummyStructure) ID() uuid.UUID {
 
 func newTestBoard() *Board {
 	info := NewBoardInfo(pkg.Size{Width: 3, Height: 3}, GENERATION_STRATEGY_CHAIN)
-	return NewBoard(info, [2]*Player{{}, {}})
+	return NewBoard(info, [2]Player{NewProxyPlayer(uuid.New()), NewProxyPlayer(uuid.New())})
 }
 
 func TestBoardSetAndGetStructure(t *testing.T) {

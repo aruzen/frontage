@@ -1,5 +1,7 @@
 package model
 
+import "github.com/google/uuid"
+
 const DEFAULT_GOD_BLESSING_POINTS = 3
 
 type DeckType int
@@ -12,37 +14,106 @@ const (
 	DECK_TYPE_EXTRA
 )
 
-type Player struct {
-	beforePlayer                              *Player
-	generationStrategy                        GenerationStrategy
-	GodBlessing                               int
-	MainDeck, SubDeck, Hand, Graveyard, Extra Cards
-	Materials                                 Materials
+// Player はボード上で扱うプレイヤーの抽象インターフェース。
+// デッキ操作を行うものは DeckPlayer を実装してください。
+type Player interface {
+	ID() uuid.UUID
+	Copy() Player
+	GodBlessing() int
+	SetGodBlessing(int)
+	Materials() Materials
+	SetMaterials(Materials)
 }
 
-func NewPlayer(mainDeck Cards, subDeck Cards) *Player {
-	return &Player{
-		beforePlayer: nil,
-		GodBlessing:  DEFAULT_GOD_BLESSING_POINTS,
-		MainDeck:     mainDeck,
-		SubDeck:      subDeck,
+type DeckPlayer interface {
+	Player
+	GetDeck(deckType DeckType) *Cards
+}
+
+type ProxyPlayer struct {
+	id          uuid.UUID
+	godBlessing int
+	materials   Materials
+}
+
+func NewProxyPlayer(id uuid.UUID) *ProxyPlayer {
+	return &ProxyPlayer{
+		id:          id,
+		godBlessing: DEFAULT_GOD_BLESSING_POINTS,
+		materials:   make(Materials),
 	}
 }
 
-func (p *Player) Copy() *Player {
-	return &Player{
+func (p *ProxyPlayer) ID() uuid.UUID {
+	return p.id
+}
+
+func (p *ProxyPlayer) Copy() Player {
+	return &ProxyPlayer{
+		id:          p.id,
+		godBlessing: p.godBlessing,
+		materials:   p.materials.Copy(),
+	}
+}
+
+func (p *ProxyPlayer) GodBlessing() int {
+	return p.godBlessing
+}
+
+func (p *ProxyPlayer) SetGodBlessing(v int) {
+	p.godBlessing = v
+}
+
+func (p *ProxyPlayer) Materials() Materials {
+	return p.materials.Copy()
+}
+
+func (p *ProxyPlayer) SetMaterials(m Materials) {
+	p.materials = m.Copy()
+}
+
+// LocalPlayer は従来のフル機能プレイヤー。
+type LocalPlayer struct {
+	id                 uuid.UUID
+	beforePlayer       *LocalPlayer
+	generationStrategy GenerationStrategy
+	godBlessing        int
+	MainDeck, SubDeck  Cards
+	Hand, Graveyard    Cards
+	Extra              Cards
+	materials          Materials
+}
+
+func NewLocalPlayer(id uuid.UUID, mainDeck Cards, subDeck Cards) *LocalPlayer {
+	return &LocalPlayer{
+		id:           id,
+		beforePlayer: nil,
+		godBlessing:  DEFAULT_GOD_BLESSING_POINTS,
+		MainDeck:     mainDeck,
+		SubDeck:      subDeck,
+		materials:    make(Materials),
+	}
+}
+
+func (p *LocalPlayer) ID() uuid.UUID {
+	return p.id
+}
+
+func (p *LocalPlayer) Copy() Player {
+	return &LocalPlayer{
+		id:           p.id,
 		beforePlayer: p.beforePlayer,
-		GodBlessing:  p.GodBlessing,
+		godBlessing:  p.godBlessing,
 		MainDeck:     p.MainDeck,
 		SubDeck:      p.SubDeck,
 		Hand:         p.Hand,
 		Graveyard:    p.Graveyard,
 		Extra:        p.Extra,
-		Materials:    p.Materials.Copy(),
+		materials:    p.materials.Copy(),
 	}
 }
 
-func (p *Player) Decks() []struct {
+func (p *LocalPlayer) Decks() []struct {
 	DeckType DeckType
 	Deck     *Cards
 } {
@@ -58,7 +129,7 @@ func (p *Player) Decks() []struct {
 	}
 }
 
-func (p *Player) GetDeck(deckType DeckType) *Cards {
+func (p *LocalPlayer) GetDeck(deckType DeckType) *Cards {
 	switch deckType {
 	case DECK_TYPE_MAIN:
 		return &p.MainDeck
@@ -74,7 +145,7 @@ func (p *Player) GetDeck(deckType DeckType) *Cards {
 	return nil
 }
 
-func (p *Player) Find(card Card) (DeckType, int, bool) {
+func (p *LocalPlayer) Find(card Card) (DeckType, int, bool) {
 	for _, deck := range p.Decks() {
 		for i, c := range *deck.Deck {
 			if c.Id() == card.Id() {
@@ -85,12 +156,12 @@ func (p *Player) Find(card Card) (DeckType, int, bool) {
 	return 0, 0, false
 }
 
-func (p *Player) HasCard(card Card) bool {
+func (p *LocalPlayer) HasCard(card Card) bool {
 	_, _, found := p.Find(card)
 	return found
 }
 
-func (p *Player) Set(deckType DeckType, idx int, card Card) bool {
+func (p *LocalPlayer) Set(deckType DeckType, idx int, card Card) bool {
 	deck := p.GetDeck(deckType)
 	if deck == nil {
 		return false
@@ -102,7 +173,7 @@ func (p *Player) Set(deckType DeckType, idx int, card Card) bool {
 	return true
 }
 
-func (p *Player) Update(card Card) bool {
+func (p *LocalPlayer) Update(card Card) bool {
 	for _, deck := range p.Decks() {
 		idx := -1
 		for i, c := range *deck.Deck {
@@ -116,4 +187,20 @@ func (p *Player) Update(card Card) bool {
 		}
 	}
 	return false
+}
+
+func (p *LocalPlayer) GodBlessing() int {
+	return p.godBlessing
+}
+
+func (p *LocalPlayer) SetGodBlessing(v int) {
+	p.godBlessing = v
+}
+
+func (p *LocalPlayer) Materials() Materials {
+	return p.materials.Copy()
+}
+
+func (p *LocalPlayer) SetMaterials(m Materials) {
+	p.materials = m.Copy()
 }

@@ -88,7 +88,16 @@ func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(ca
 	}
 
 	player := players[state.holder]
-	deck := player.GetDeck(state.deckType)
+	deckPlayer, ok := player.(model.DeckPlayer)
+	if !ok {
+		slog.Warn("player does not support deck operations.")
+		return next
+	}
+	deck := deckPlayer.GetDeck(state.deckType)
+	if deck == nil {
+		slog.Warn("deck is nil for holder", "holder", state.holder, "deckType", state.deckType)
+		return next
+	}
 
 	if !deck.Update(cloned) {
 		slog.Warn("failed to update card in deck.", "deckType", state.deckType, "cardID", cloned.Id())

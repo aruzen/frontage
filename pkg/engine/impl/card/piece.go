@@ -3,6 +3,7 @@ package card
 import (
 	"frontage/pkg"
 	"frontage/pkg/engine/model"
+	"github.com/google/uuid"
 )
 
 type Piece interface {
@@ -16,10 +17,12 @@ type Piece interface {
 	AttackRanges() []pkg.Point
 
 	Copy() MutablePiece
+	Mirror(uuid uuid.UUID) MutablePiece
 }
 
 type MutablePiece interface {
 	Piece
+	model.MutableCard
 	SetHP(int)
 	SetMP(int)
 	SetATK(int)
@@ -32,8 +35,8 @@ type BasePiece struct {
 	hp, mp, atk  int
 }
 
-func (p *BasePiece) Type() model.Type {
-	return model.TYPE_PIECE
+func (p *BasePiece) Type() model.CardType {
+	return model.CARD_TYPE_PIECE
 }
 
 func (p *BasePiece) HP() int {
@@ -59,6 +62,17 @@ func (p *BasePiece) AttackRanges() []pkg.Point {
 func (p *BasePiece) Copy() MutablePiece {
 	return &BasePiece{
 		BaseCard:     *p.BaseCard.CardCopy().(*model.BaseCard),
+		legalMoves:   p.legalMoves,
+		attackRanges: p.attackRanges,
+		hp:           p.hp,
+		mp:           p.mp,
+		atk:          p.atk,
+	}
+}
+
+func (p *BasePiece) Mirror(uuid uuid.UUID) MutablePiece {
+	return &BasePiece{
+		BaseCard:     *p.BaseCard.CardMirror(uuid).(*model.BaseCard),
 		legalMoves:   p.legalMoves,
 		attackRanges: p.attackRanges,
 		hp:           p.hp,

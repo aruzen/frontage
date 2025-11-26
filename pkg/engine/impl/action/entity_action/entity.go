@@ -121,6 +121,6 @@ func (e EntityAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
 		return nil
 	}
 	result := make([]*logic.EffectEvent, 1)
-	result[0] = logic.NewEffectEvent(action.ENTITY_HP_DECREASE_ACTION, s.decreaseHPState)
+	result[0] = logic.NewEffectEvent(action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION), s.decreaseHPState)
 	return result
 }

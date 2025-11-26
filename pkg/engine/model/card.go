@@ -1,6 +1,7 @@
 package model
 
 import (
+	"frontage/pkg"
 	"github.com/google/uuid"
 )
 
@@ -14,26 +15,25 @@ const (
 	PLACED_EXTRA
 )
 
-type Type int
+type CardType int
 
 const (
-	TYPE_PIECE Type = iota
-	TYPE_CHARM
-	TYPE_STRUCTURE
-	TYPE_MAGIC
-	TYPE_SKILL
+	CARD_TYPE_PIECE CardType = iota
+	CARD_TYPE_CHARM
+	CARD_TYPE_STRUCTURE
+	CARD_TYPE_MAGIC
+	CARD_TYPE_SKILL
 )
 
 type Card interface {
 	Id() uuid.UUID
-	Name() string
-	Resource() string
+	Tag() pkg.LocalizeTag
 	Placed() Placed
-	Type() Type
+	Type() CardType
 	PlayCost() Materials
 
 	CardCopy() MutableCard
-	Mirror(i uuid.UUID) MutableCard
+	CardMirror(i uuid.UUID) MutableCard
 }
 
 type MutableCard interface {
@@ -45,19 +45,17 @@ type MutableCard interface {
 
 type BaseCard struct {
 	id       uuid.UUID
-	name     string
-	resource string
+	tag      pkg.LocalizeTag
 	placed   Placed
 	playCost Materials
 }
 
 var _ MutableCard = (*BaseCard)(nil)
 
-func NewBaseCard(name, resource string, placed Placed, playCost Materials) *BaseCard {
+func NewBaseCard(tag pkg.LocalizeTag, placed Placed, playCost Materials) *BaseCard {
 	return &BaseCard{
 		id:       uuid.New(),
-		name:     name,
-		resource: resource,
+		tag:      tag,
 		placed:   placed,
 		playCost: playCost.Copy(),
 	}
@@ -66,14 +64,13 @@ func NewBaseCard(name, resource string, placed Placed, playCost Materials) *Base
 func (b *BaseCard) CardCopy() MutableCard {
 	return &BaseCard{
 		id:       b.id,
-		name:     b.name,
-		resource: b.resource,
+		tag:      b.tag,
 		placed:   b.placed,
 		playCost: b.playCost.Copy(),
 	}
 }
 
-func (b *BaseCard) Mirror(i uuid.UUID) MutableCard {
+func (b *BaseCard) CardMirror(i uuid.UUID) MutableCard {
 	copied := b.CardCopy().(*BaseCard)
 	copied.id = i
 	return copied
@@ -83,12 +80,8 @@ func (b *BaseCard) Id() uuid.UUID {
 	return b.id
 }
 
-func (b *BaseCard) Name() string {
-	return b.name
-}
-
-func (b *BaseCard) Resource() string {
-	return b.resource
+func (b *BaseCard) Tag() pkg.LocalizeTag {
+	return b.tag
 }
 
 func (b *BaseCard) Placed() Placed {
@@ -107,6 +100,6 @@ func (b *BaseCard) SetPlayCost(playCost Materials) {
 	b.playCost = playCost
 }
 
-func (b *BaseCard) Type() Type {
+func (b *BaseCard) Type() CardType {
 	panic("オーバーライドしてください")
 }

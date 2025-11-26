@@ -1,6 +1,7 @@
 package piece_action
 
 import (
+	"fmt"
 	"frontage/internal/event"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
@@ -25,6 +26,66 @@ type PieceMPContext struct {
 type PieceATKContext struct {
 	event.BaseEffectContext
 	Value int
+}
+
+func (c PieceHPContext) ToMap() map[string]interface{} {
+	result := c.BaseEffectContext.ToMap()
+	result["value"] = c.Value
+	return result
+}
+
+func (c *PieceHPContext) FromMap(m map[string]interface{}) error {
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
+}
+
+func (c PieceMPContext) ToMap() map[string]interface{} {
+	result := c.BaseEffectContext.ToMap()
+	result["value"] = c.Value
+	return result
+}
+
+func (c *PieceMPContext) FromMap(m map[string]interface{}) error {
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
+}
+
+func (c PieceATKContext) ToMap() map[string]interface{} {
+	result := c.BaseEffectContext.ToMap()
+	result["value"] = c.Value
+	return result
+}
+
+func (c *PieceATKContext) FromMap(m map[string]interface{}) error {
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
 }
 
 type basePieceHPAction struct {
@@ -195,4 +256,25 @@ func (e PieceATKFixAction) Solve(board *model.Board, state interface{}, c logic.
 	pieceState.piece.SetATK(context.Value)
 	board.UpdatePiece(pieceState.piece)
 	return board
+}
+
+func toInt(v interface{}) (int, error) {
+	switch val := v.(type) {
+	case int:
+		return val, nil
+	case int64:
+		return int(val), nil
+	case float64:
+		return int(val), nil
+	case float32:
+		return int(val), nil
+	case uint:
+		return int(val), nil
+	case uint64:
+		return int(val), nil
+	case nil:
+		return 0, fmt.Errorf("value is nil")
+	default:
+		return 0, fmt.Errorf("expected number, got %T", v)
+	}
 }

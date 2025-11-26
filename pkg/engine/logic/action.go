@@ -14,6 +14,8 @@ type Action interface {
 type EffectContext interface {
 	IsCanceled() bool
 	Cancel()
+	ToMap() map[string]interface{}
+	FromMap(map[string]interface{}) error
 }
 
 type EffectAction interface {

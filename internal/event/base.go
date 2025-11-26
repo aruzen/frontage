@@ -1,6 +1,7 @@
 package event
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -18,6 +19,29 @@ func (b *BaseEffectContext) IsCanceled() bool {
 
 func (b *BaseEffectContext) Cancel() {
 	b.canceled = true
+}
+
+func (b *BaseEffectContext) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"canceled": b.canceled,
+	}
+}
+
+func (b *BaseEffectContext) FromMap(m map[string]interface{}) error {
+	if m == nil {
+		return nil
+	}
+	if v, ok := m["canceled"]; ok {
+		switch val := v.(type) {
+		case bool:
+			b.canceled = val
+		case nil:
+			b.canceled = false
+		default:
+			return fmt.Errorf("canceled expects bool, got %T", v)
+		}
+	}
+	return nil
 }
 
 type BaseWantState[StateType any] struct {

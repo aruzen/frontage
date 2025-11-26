@@ -44,6 +44,14 @@ func (s SystemNoticeContext) IsCanceled() bool {
 
 func (s SystemNoticeContext) Cancel() {}
 
+func (s SystemNoticeContext) ToMap() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
+func (s *SystemNoticeContext) FromMap(_ map[string]interface{}) error {
+	return nil
+}
+
 func (s systemNoticeAction) MakeState() interface{} {
 	return SystemNoticeState{}
 }

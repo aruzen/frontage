@@ -3,13 +3,13 @@ package pkg
 import "log/slog"
 
 type Size struct {
-	Width  int
-	Height int
+	Width  int `json:"width"`
+	Height int `json:"height"`
 }
 
 type Point struct {
-	X int
-	Y int
+	X int `json:"x"`
+	Y int `json:"y"`
 }
 
 type ItemTag string

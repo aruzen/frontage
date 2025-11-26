@@ -1,6 +1,7 @@
 package piece_action
 
 import (
+	"fmt"
 	"frontage/internal/event"
 	"frontage/pkg"
 	"frontage/pkg/engine/impl/action"
@@ -40,6 +41,77 @@ type PieceAttackActionContext struct {
 	event.BaseEffectContext
 	Point pkg.Point
 	Value int
+}
+
+func (c PieceSummonActionContext) ToMap() map[string]interface{} {
+	result := c.BaseEffectContext.ToMap()
+	result["point"] = pointToMap(c.Point)
+	if c.Piece != nil {
+		result["piece_id"] = c.Piece.Id().String()
+	}
+	return result
+}
+
+func (c *PieceSummonActionContext) FromMap(m map[string]interface{}) error {
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["point"]; ok {
+		p, err := fromPointMap(v)
+		if err != nil {
+			return fmt.Errorf("point: %w", err)
+		}
+		c.Point = p
+	}
+	return nil
+}
+
+func (c PieceMoveActionContext) ToMap() map[string]interface{} {
+	result := c.BaseEffectContext.ToMap()
+	result["point"] = pointToMap(c.Point)
+	return result
+}
+
+func (c *PieceMoveActionContext) FromMap(m map[string]interface{}) error {
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["point"]; ok {
+		p, err := fromPointMap(v)
+		if err != nil {
+			return fmt.Errorf("point: %w", err)
+		}
+		c.Point = p
+	}
+	return nil
+}
+
+func (c PieceAttackActionContext) ToMap() map[string]interface{} {
+	result := c.BaseEffectContext.ToMap()
+	result["point"] = pointToMap(c.Point)
+	result["value"] = c.Value
+	return result
+}
+
+func (c *PieceAttackActionContext) FromMap(m map[string]interface{}) error {
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["point"]; ok {
+		p, err := fromPointMap(v)
+		if err != nil {
+			return fmt.Errorf("point: %w", err)
+		}
+		c.Point = p
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
 }
 
 type PieceSummonAction struct {
@@ -123,4 +195,24 @@ func (e PieceAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
 	result := make([]*logic.EffectEvent, 1)
 	result[0] = logic.NewEffectEvent(action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION), s.decreaseHPState)
 	return result
+}
+
+func pointToMap(p pkg.Point) map[string]interface{} {
+	return map[string]interface{}{"x": p.X, "y": p.Y}
+}
+
+func fromPointMap(v interface{}) (pkg.Point, error) {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return pkg.Point{}, fmt.Errorf("expected map for point, got %T", v)
+	}
+	x, err := toInt(m["x"])
+	if err != nil {
+		return pkg.Point{}, fmt.Errorf("x: %w", err)
+	}
+	y, err := toInt(m["y"])
+	if err != nil {
+		return pkg.Point{}, fmt.Errorf("y: %w", err)
+	}
+	return pkg.Point{X: x, Y: y}, nil
 }

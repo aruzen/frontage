@@ -1,6 +1,7 @@
 package card_action
 
 import (
+	"fmt"
 	"frontage/internal/event"
 	"frontage/pkg/engine/impl/card"
 	"frontage/pkg/engine/logic"
@@ -28,6 +29,96 @@ type PieceMPContext struct {
 type PieceATKContext struct {
 	*event.BaseEffectContext
 	Value int
+}
+
+func (c PieceHPContext) ToMap() map[string]interface{} {
+	result := map[string]interface{}{
+		"value": c.Value,
+	}
+	if c.BaseEffectContext != nil {
+		for k, v := range c.BaseEffectContext.ToMap() {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func (c *PieceHPContext) FromMap(m map[string]interface{}) error {
+	if c.BaseEffectContext == nil {
+		base := event.NewBaseEffectContext()
+		c.BaseEffectContext = &base
+	}
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
+}
+
+func (c PieceMPContext) ToMap() map[string]interface{} {
+	result := map[string]interface{}{
+		"value": c.Value,
+	}
+	if c.BaseEffectContext != nil {
+		for k, v := range c.BaseEffectContext.ToMap() {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func (c *PieceMPContext) FromMap(m map[string]interface{}) error {
+	if c.BaseEffectContext == nil {
+		base := event.NewBaseEffectContext()
+		c.BaseEffectContext = &base
+	}
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
+}
+
+func (c PieceATKContext) ToMap() map[string]interface{} {
+	result := map[string]interface{}{
+		"value": c.Value,
+	}
+	if c.BaseEffectContext != nil {
+		for k, v := range c.BaseEffectContext.ToMap() {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func (c *PieceATKContext) FromMap(m map[string]interface{}) error {
+	if c.BaseEffectContext == nil {
+		base := event.NewBaseEffectContext()
+		c.BaseEffectContext = &base
+	}
+	if err := c.BaseEffectContext.FromMap(m); err != nil {
+		return err
+	}
+	if v, ok := m["value"]; ok {
+		num, err := toInt(v)
+		if err != nil {
+			return fmt.Errorf("value: %w", err)
+		}
+		c.Value = num
+	}
+	return nil
 }
 
 type baseHPAction struct {
@@ -136,7 +227,7 @@ func (p baseATKAction) MakeState(holder int, deckType model.DeckType, card card.
 func (p baseHPAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
 	if PieceState, ok := state.(PieceActionState); ok {
 		base := event.NewBaseEffectContext()
-		return PieceHPContext{BaseEffectContext: &base, Value: PieceState.value}
+		return &PieceHPContext{BaseEffectContext: &base, Value: PieceState.value}
 	}
 	slog.Warn("State was not PieceActionState.")
 	return nil
@@ -181,7 +272,7 @@ func (p PieceHPFixAction) Solve(board *model.Board, state interface{}, context l
 func (p baseMPAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
 	if PieceState, ok := state.(PieceActionState); ok {
 		base := event.NewBaseEffectContext()
-		return PieceMPContext{BaseEffectContext: &base, Value: PieceState.value}
+		return &PieceMPContext{BaseEffectContext: &base, Value: PieceState.value}
 	}
 	slog.Warn("State was not PieceActionState.")
 	return nil
@@ -226,7 +317,7 @@ func (p PieceMPFixAction) Solve(board *model.Board, state interface{}, context l
 func (p baseATKAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) logic.EffectContext {
 	if PieceState, ok := state.(PieceActionState); ok {
 		base := event.NewBaseEffectContext()
-		return PieceATKContext{BaseEffectContext: &base, Value: PieceState.value}
+		return &PieceATKContext{BaseEffectContext: &base, Value: PieceState.value}
 	}
 	slog.Warn("State was not PieceActionState.")
 	return nil
@@ -266,4 +357,23 @@ func (p PieceATKFixAction) Solve(board *model.Board, state interface{}, context 
 	return updatePieceCard(board, pieceState, func(m card.MutablePiece) {
 		m.SetATK(atkContext.Value)
 	})
+}
+
+func toInt(v interface{}) (int, error) {
+	switch val := v.(type) {
+	case int:
+		return val, nil
+	case int64:
+		return int(val), nil
+	case float64:
+		return int(val), nil
+	case float32:
+		return int(val), nil
+	case uint:
+		return int(val), nil
+	case uint64:
+		return int(val), nil
+	default:
+		return 0, fmt.Errorf("expected number, got %T", v)
+	}
 }

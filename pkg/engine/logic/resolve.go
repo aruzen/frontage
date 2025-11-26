@@ -31,7 +31,7 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 	es.Summaries = append(es.Summaries, summaries)
 
 	context, tmpSummary := e.action.Act(e.State(), beforeEffect, beforeContext)
-	appendSummary(summaries, e.action, tmpSummary)
+	appendSummary(summaries, e.action, SUMMARY_TYPE_ACT, tmpSummary)
 
 	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
 		context = e.modifier.Resolve(es, e.action, context, summaries)
@@ -42,7 +42,7 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 	}
 
 	es.Board, tmpSummary = e.action.Solve(es.Board, e.State(), context)
-	appendSummary(summaries, e.action, tmpSummary)
+	appendSummary(summaries, e.action, SUMMARY_TYPE_SOLVE, tmpSummary)
 
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, *branch.state) {
@@ -64,7 +64,7 @@ func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context Effe
 		return nil
 	}
 	context, tmpSummary := e.action.Modify(*e.state, context)
-	appendSummary(summaries, e.action, tmpSummary)
+	appendSummary(summaries, e.action, SUMMARY_TYPE_MODIFY, tmpSummary)
 
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, *branch.state) {
@@ -81,6 +81,6 @@ func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context Effe
 	return context
 }
 
-func appendSummary(summaries *[]ActionSummary, action Action, summary Summary) {
-	*summaries = append(*summaries, ActionSummary{Action: action, Data: summary})
+func appendSummary(summaries *[]ActionSummary, action Action, st SummaryType, summary Summary) {
+	*summaries = append(*summaries, ActionSummary{Action: action, Type: st, Data: summary})
 }

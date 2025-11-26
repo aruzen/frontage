@@ -4,7 +4,7 @@ import "frontage/pkg/network/data"
 
 type ActEventPayload struct {
 	Result  data.ActionResult
-	Summary []data.EventSummary
+	Summary []data.ActionSummary
 }
 
 type ActEventPacket struct {

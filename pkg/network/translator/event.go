@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"frontage/pkg"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/network/data"
 	"frontage/pkg/network/repository"
@@ -11,7 +12,7 @@ type ActionResultTranslator struct {
 	effectRepo repository.ActionRepository
 }
 
-type EventSummaryTranslator struct {
+type ActionSummaryTranslator struct {
 	effectRepo repository.ActionRepository
 }
 
@@ -44,18 +45,32 @@ func (t *ActionResultTranslator) FromModel(m logic.ActionResult) (data.ActionRes
 	}, nil
 }
 
-func NewEventSummaryTranslator(effectRepo repository.ActionRepository) *EventSummaryTranslator {
-	return &EventSummaryTranslator{
+func NewActionSummaryTranslator(effectRepo repository.ActionRepository) *ActionSummaryTranslator {
+	return &ActionSummaryTranslator{
 		effectRepo: effectRepo,
 	}
 }
 
-/* TODO
-func (t *EventSummaryTranslator) ToModel(d data.EventSummary) (logic.Action, map[string]interface{}, error) {
-	panic("implement me")
+func (t *ActionSummaryTranslator) ToModel(d data.ActionSummary) (logic.ActionSummary, error) {
+	action, err := t.effectRepo.Find(pkg.LocalizeTag(d.ActionTag))
+	if err != nil {
+		return logic.ActionSummary{}, err
+	}
+	switch logic.SummaryType(d.Type) {
+	case logic.SUMMARY_TYPE_ACT:
+		fallthrough
+	case logic.SUMMARY_TYPE_MODIFY:
+		fallthrough
+	case logic.SUMMARY_TYPE_SOLVE:
+		return logic.ActionSummary{Action: action, Type: logic.SummaryType(d.Type), Data: d.Data}, ErrNotFound
+	}
+	return logic.ActionSummary{}, ErrNotFound
 }
 
-func (t *EventSummaryTranslator) FromModel(d data.EventSummary) (logic.Action, map[string]interface{}, error) {
-	panic("implement me")
+func (t *ActionSummaryTranslator) FromModel(m logic.ActionSummary) (data.ActionSummary, error) {
+	return data.ActionSummary{
+		ActionTag: string(m.Action.LocalizeTag()),
+		Type:      string(m.Type),
+		Data:      m.Data,
+	}, nil
 }
-*/

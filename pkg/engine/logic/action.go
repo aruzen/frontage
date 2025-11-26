@@ -25,8 +25,17 @@ type EffectContext interface {
 
 type Summary map[string]interface{}
 
+type SummaryType string
+
+const (
+	SUMMARY_TYPE_ACT    SummaryType = "act"
+	SUMMARY_TYPE_MODIFY SummaryType = "modify"
+	SUMMARY_TYPE_SOLVE  SummaryType = "solve"
+)
+
 type ActionSummary struct {
 	Action Action
+	Type   SummaryType
 	Data   Summary
 }
 

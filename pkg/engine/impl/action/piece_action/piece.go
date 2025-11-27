@@ -189,9 +189,11 @@ func (s PieceAttackActionState) ToMap() map[string]interface{} {
 		"point":    pkg.PointToMap(s.point),
 		"value":    s.value,
 	}
+	/* これはSolve時にのみ必要なのでResultに関係ない
 	if s.decreaseHPState != nil {
 		result["decrease_hp_state"] = s.decreaseHPState.ToMap()
 	}
+	*/
 	return result
 }
 
@@ -211,14 +213,14 @@ func (s *PieceAttackActionState) FromMap(b *model.Board, m map[string]interface{
 		return fmt.Errorf("value: %w", err)
 	}
 	s.value = num
-	/*
-		if mm, ok := m["decrease_hp_state"].(map[string]interface{}); ok {
-			child := &PieceOperateActionState{}
-			if err := child.FromMap(mm); err != nil {
-				return fmt.Errorf("decrease_hp_state: %w", err)
-			}
-			s.decreaseHPState = child
+	/* これはSolve時にのみ必要なのでResultに関係ない
+	if mm, ok := m["decrease_hp_state"].(map[string]interface{}); ok {
+		child := &PieceOperateActionState{}
+		if err := child.FromMap(mm); err != nil {
+			return fmt.Errorf("decrease_hp_state: %w", err)
 		}
+		s.decreaseHPState = child
+	}
 	*/
 	if b != nil {
 		if piece, ok := b.GetPiece(id); ok {

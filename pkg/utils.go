@@ -46,7 +46,7 @@ func Make2D[T any](size Size, init T) [][]T {
 	data := make([]T, size.Height*size.Width)
 	grid := make([][]T, size.Width)
 	for i := range grid {
-		grid[i] = data[i*size.Width : (i+1)*size.Width]
+		grid[i] = data[i*size.Height : (i+1)*size.Height]
 		for j := range grid[i] {
 			grid[i][j] = init
 		}
@@ -58,7 +58,7 @@ func Copy2D[T any](size Size, o [][]T) [][]T {
 	data := make([]T, size.Height*size.Width)
 	grid := make([][]T, size.Width)
 	for i := range grid {
-		grid[i] = data[i*size.Width : (i+1)*size.Width]
+		grid[i] = data[i*size.Height : (i+1)*size.Height]
 		for j := range grid[i] {
 			grid[i][j] = o[i][j]
 		}

@@ -276,7 +276,7 @@ func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context 
 
 func (e PieceMoveAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceMoveActionState); ok {
-		return &PieceSummonActionContext{event.BaseEffectContext{}, s.to, s.piece}, logic.Summary{"from": pkg.PointToMap(s.from), "to": pkg.PointToMap(s.to)}
+		return &PieceMoveActionContext{event.BaseEffectContext{}, s.to}, logic.Summary{"from": pkg.PointToMap(s.from), "to": pkg.PointToMap(s.to)}
 	}
 	return nil, nil
 }
@@ -295,8 +295,8 @@ func (e PieceMoveAction) Solve(board *model.Board, state interface{}, context lo
 }
 
 func (e PieceAttackAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceMoveActionState); ok {
-		return &PieceSummonActionContext{event.BaseEffectContext{}, s.to, s.piece}, logic.Summary{"target": pkg.PointToMap(s.to)}
+	if s, ok := state.(PieceAttackActionState); ok {
+		return &PieceAttackActionContext{event.BaseEffectContext{}, s.point, s.value}, logic.Summary{"target": pkg.PointToMap(s.point)}
 	}
 	return nil, nil
 }
@@ -304,10 +304,24 @@ func (e PieceAttackAction) Act(state interface{}, beforeAction logic.EffectActio
 func (e PieceAttackAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
+		return board, nil
+	}
+	if s.decreaseHPState == nil {
+		return board, nil
+	}
+	if board == nil {
 		return nil, nil
 	}
+	size := board.Size()
+	if c.Point.X < 0 || c.Point.X >= size.Width || c.Point.Y < 0 || c.Point.Y >= size.Height {
+		return board, nil
+	}
+	target := board.Entities()[c.Point.X][c.Point.Y]
+	if target == nil {
+		return board, nil
+	}
 	board = board.Next()
-	s.decreaseHPState.piece = board.Entities()[c.Point.X][c.Point.Y].Copy()
+	s.decreaseHPState.piece = target.Copy()
 	s.decreaseHPState.value = c.Value
 	return board, logic.Summary{"target": pkg.PointToMap(c.Point), "value": c.Value}
 }
@@ -317,7 +331,11 @@ func (e PieceAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
 	if !ok {
 		return nil
 	}
-	result := make([]*logic.EffectEvent, 1)
-	result[0] = logic.NewEffectEvent(action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION), s.decreaseHPState)
-	return result
+	effect := action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION)
+	if effect == nil {
+		return nil
+	}
+	return []*logic.EffectEvent{
+		logic.NewEffectEvent(effect, s.decreaseHPState),
+	}
 }

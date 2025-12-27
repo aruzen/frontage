@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"frontage/internal/log"
+	action_register "frontage/pkg/engine/impl/action/register"
 	"frontage/pkg/network"
 	"frontage/pkg/network/controller"
 	"frontage/pkg/network/repository"
@@ -19,6 +21,9 @@ type entryAndExitInfo struct {
 }
 
 func main() {
+	action_register.Init()
+	log.Init(true)
+
 	systemCtx := context.Background()
 	systemCtx, systemFinish := context.WithCancel(systemCtx)
 	systemVisitPlayer := make(chan entryAndExitInfo)

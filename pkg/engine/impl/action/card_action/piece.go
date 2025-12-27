@@ -228,6 +228,9 @@ func (p PieceActionState) FromMap(b *model.Board, m map[string]interface{}) erro
 		return err
 	}
 
+	if b == nil {
+		return nil
+	}
 	player, ok := b.FindPlayer(p.holderID)
 	if !ok {
 		return errors.New("player not found.")
@@ -262,12 +265,11 @@ func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(ca
 
 	next := board.Next()
 	holder := state.Holder()
-	deck := holder.GetDeck(state.DeckType())
-
 	if holder == nil {
 		slog.Warn("holder not found")
 		return board
 	}
+	deck := holder.GetDeck(state.DeckType())
 	mut := state.PieceCard().Copy()
 
 	mutate(mut)

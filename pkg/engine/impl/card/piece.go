@@ -63,11 +63,15 @@ func (p *BasePiece) ATK() int {
 }
 
 func (p *BasePiece) LegalMoves() []pkg.Point {
-	return p.legalMoves
+	result := make([]pkg.Point, len(p.legalMoves))
+	copy(result, p.legalMoves)
+	return result
 }
 
 func (p *BasePiece) AttackRanges() []pkg.Point {
-	return p.attackRanges
+	result := make([]pkg.Point, len(p.attackRanges))
+	copy(result, p.attackRanges)
+	return result
 }
 
 func (p *BasePiece) Copy() MutablePiece {

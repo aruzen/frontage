@@ -106,11 +106,11 @@ func (p *LocalPlayer) Copy() Player {
 		id:           p.id,
 		beforePlayer: p.beforePlayer,
 		godBlessing:  p.godBlessing,
-		MainDeck:     p.MainDeck,
-		SubDeck:      p.SubDeck,
-		Hand:         p.Hand,
-		Graveyard:    p.Graveyard,
-		Extra:        p.Extra,
+		MainDeck:     p.MainDeck.Copy(),
+		SubDeck:      p.SubDeck.Copy(),
+		Hand:         p.Hand.Copy(),
+		Graveyard:    p.Graveyard.Copy(),
+		Extra:        p.Extra.Copy(),
 		materials:    p.materials.Copy(),
 	}
 }

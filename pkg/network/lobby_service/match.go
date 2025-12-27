@@ -25,8 +25,12 @@ func NewMatchMakeService(matchRepo *repository.MatchRepository, pvp pvp.RequireR
 func (m MatchMakeService) MatchMake(ctx context.Context, id uuid.UUID, matchType data.MatchType) error {
 	switch matchType {
 	case data.PvE:
+		matchID := uuid.New()
+		if m.matchRepo != nil {
+			m.matchRepo.Insert(matchID, id, uuid.Nil)
+		}
 		go pve.Game(m.pveRepos, id, pve.DefaultGameInfo())
-		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: uuid.New()})
+		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: matchID})
 		return nil
 	case data.PvP:
 		return errors.New("pvp match not implemented")

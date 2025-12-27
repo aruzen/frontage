@@ -1,4 +1,4 @@
-package lobby_api
+package lobby_handler
 
 import (
 	"context"
@@ -34,5 +34,5 @@ func (h *MatchMakeHandler) ServePacket(id uuid.UUID, data []byte) error {
 	if err := json.Unmarshal(data, &packet); err != nil {
 		return err
 	}
-	return nil
+	return h.service.MatchMake(context.Background(), id, packet.Type)
 }

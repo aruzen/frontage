@@ -1,7 +1,8 @@
-package lobby_api
+package lobby_service
 
 import (
 	"context"
+	"errors"
 	"frontage/pkg/network"
 	"frontage/pkg/network/controller/pve"
 	"frontage/pkg/network/controller/pvp"
@@ -25,11 +26,10 @@ func (m MatchMakeService) MatchMake(ctx context.Context, id uuid.UUID, matchType
 	switch matchType {
 	case data.PvE:
 		go pve.Game(m.pveRepos, id, pve.DefaultGameInfo())
-		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{})
+		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: uuid.New()})
+		return nil
 	case data.PvP:
-		m.matchRepo.
-
-		go pve.Game(m.pveRepos, id, pve.DefaultGameInfo())
-		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{})
+		return errors.New("pvp match not implemented")
 	}
+	return errors.New("unknown match type")
 }

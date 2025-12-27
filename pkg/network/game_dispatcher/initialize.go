@@ -48,8 +48,9 @@ func NewMyDeckUploadDispatcher() *MyDeckUploadDispatcher {
 	return &MyDeckUploadDispatcher{}
 }
 
-func (d *MyDeckUploadDispatcher) DispatchPacket(mainDeck, subDeck []string) ([]byte, error) {
+func (d *MyDeckUploadDispatcher) DispatchPacket(id uuid.UUID, mainDeck, subDeck []string) ([]byte, error) {
 	packet := game_api.MyDeckUploadPacket{
+		Id:       id,
 		MainDeck: mainDeck,
 		SubDeck:  subDeck,
 	}

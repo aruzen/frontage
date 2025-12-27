@@ -3,7 +3,8 @@ package lobby_handler
 import (
 	"context"
 	"encoding/json"
-	"frontage/pkg/network/data"
+	"fmt"
+	ndata "frontage/pkg/network/data"
 	"frontage/pkg/network/lobby_api"
 	"frontage/pkg/network/repository"
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ type MatchMakeHandler struct {
 	matchRepo repository.MatchRepository
 }
 
-func NewLoginHandler(service MatchMakeService, matchRepo repository.MatchRepository) *MatchMakeHandler {
+func NewMatchMakeHandler(service MatchMakeService, matchRepo repository.MatchRepository) *MatchMakeHandler {
 	return &MatchMakeHandler{service: service, matchRepo: matchRepo}
 }
 
@@ -33,6 +34,11 @@ func (h *MatchMakeHandler) ServePacket(id uuid.UUID, data []byte) error {
 	var packet lobby_api.WaitMatchMakePacket
 	if err := json.Unmarshal(data, &packet); err != nil {
 		return err
+	}
+	switch packet.Type {
+	case ndata.PvP, ndata.PvE:
+	default:
+		return fmt.Errorf("invalid match type: %d", packet.Type)
 	}
 	return h.service.MatchMake(context.Background(), id, packet.Type)
 }

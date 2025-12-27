@@ -68,6 +68,9 @@ func (es *EventSystem) transmission(listenHelper func(es *EventSystem, maybe int
 
 	if multi, ok := event.Action().(MultiEffectAction); ok {
 		effects := multi.SubEffects(event.State())
+		if len(effects) == 0 {
+			return
+		}
 		events := make([]Event, len(effects))
 		for i := range effects {
 			events[i] = effects[i]

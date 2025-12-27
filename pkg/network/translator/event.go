@@ -62,7 +62,7 @@ func (t *ActionSummaryTranslator) ToModel(d data.ActionSummary) (logic.ActionSum
 	case logic.SUMMARY_TYPE_MODIFY:
 		fallthrough
 	case logic.SUMMARY_TYPE_SOLVE:
-		return logic.ActionSummary{Action: action, Type: logic.SummaryType(d.Type), Data: d.Data}, ErrNotFound
+		return logic.ActionSummary{Action: action, Type: logic.SummaryType(d.Type), Data: d.Data}, nil
 	}
 	return logic.ActionSummary{}, ErrNotFound
 }

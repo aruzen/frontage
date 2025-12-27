@@ -9,7 +9,11 @@ type MatchRepository struct {
 }
 
 func NewMatchRepository() *MatchRepository {
-	return &MatchRepository{}
+	return &MatchRepository{
+		matchIdles: make([]uuid.UUID, 0),
+		matchIds:   make([]uuid.UUID, 0),
+		matchTable: make(map[uuid.UUID]uuid.UUID),
+	}
 }
 
 func (m *MatchRepository) Insert(match, p1, p2 uuid.UUID) {

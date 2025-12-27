@@ -42,6 +42,9 @@ var (
 var effectActionTable map[logic.EffectActionTag]logic.EffectAction
 
 func Register(tag logic.EffectActionTag, action logic.EffectAction) error {
+	if effectActionTable == nil {
+		effectActionTable = make(map[logic.EffectActionTag]logic.EffectAction)
+	}
 	if _, ok := effectActionTable[tag]; ok {
 		return fmt.Errorf("effect action tag %s is already registered", tag)
 	}

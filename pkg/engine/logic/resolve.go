@@ -6,10 +6,16 @@ import (
 )
 
 func (es *EventSystem) Resolve() {
+	if es == nil || es.trigger == nil {
+		return
+	}
 	es.trigger.Resolve(es, nil, nil)
 }
 
 func (es *EventSystem) ResolveTest() (*model.Board, []ActionResult) {
+	if es == nil || es.trigger == nil {
+		return nil, nil
+	}
 	sandbox := &EventSystem{
 		Board:          es.Board.Sandbox(),
 		trigger:        es.trigger,
@@ -17,7 +23,7 @@ func (es *EventSystem) ResolveTest() (*model.Board, []ActionResult) {
 		AppliedEffects: make([]ActionResult, 0),
 	}
 	sandbox.Resolve()
-	return es.Board, es.AppliedEffects
+	return sandbox.Board, sandbox.AppliedEffects
 }
 
 func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, beforeContext EffectContext) {
@@ -25,16 +31,15 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 		slog.Warn("IntegrityCheck failed.")
 		return
 	}
-	var summaries *[]ActionSummary
+	summaries := make([]ActionSummary, 0, 3)
 	var tmpSummary Summary
-	*summaries = make([]ActionSummary, 0, 3)
-	es.Summaries = append(es.Summaries, summaries)
+	es.Summaries = append(es.Summaries, &summaries)
 
 	context, tmpSummary := e.action.Act(e.State(), beforeEffect, beforeContext)
-	appendSummary(summaries, e.action, SUMMARY_TYPE_ACT, tmpSummary)
+	appendSummary(&summaries, e.action, SUMMARY_TYPE_ACT, tmpSummary)
 
 	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
-		context = e.modifier.Resolve(es, e.action, context, summaries)
+		context = e.modifier.Resolve(es, e.action, context, &summaries)
 	}
 
 	if context == nil || context.IsCanceled() {
@@ -42,7 +47,7 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 	}
 
 	es.Board, tmpSummary = e.action.Solve(es.Board, e.State(), context)
-	appendSummary(summaries, e.action, SUMMARY_TYPE_SOLVE, tmpSummary)
+	appendSummary(&summaries, e.action, SUMMARY_TYPE_SOLVE, tmpSummary)
 
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, *branch.state) {

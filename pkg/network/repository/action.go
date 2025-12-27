@@ -37,10 +37,10 @@ func (s *ActionRepository) FindModify(tag logic.ModifyActionTag) (logic.ModifyAc
 }
 
 func (s *ActionRepository) Find(tag pkg.LocalizeTag) (logic.Action, error) {
-	if a, err := s.FindEffect(logic.EffectActionTag(tag)); err != nil {
+	if a, err := s.FindEffect(logic.EffectActionTag(tag)); err == nil {
 		return a, nil
 	}
-	if a, err := s.FindModify(logic.ModifyActionTag(tag)); err != nil {
+	if a, err := s.FindModify(logic.ModifyActionTag(tag)); err == nil {
 		return a, nil
 	}
 	return nil, ErrNotFound

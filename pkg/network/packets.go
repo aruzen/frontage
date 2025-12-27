@@ -31,8 +31,25 @@ func SendPacket(id uuid.UUID, h Packet) bool {
 	binary.LittleEndian.PutUint32(header[2:6], uint32(len(body)))
 	connection.Mtx.Lock()
 	defer connection.Mtx.Unlock()
-	connection.Conn.Write(header)
-	connection.Conn.Write(body)
+	writeAll := func(data []byte) bool {
+		for len(data) > 0 {
+			written, err := connection.Conn.Write(data)
+			if err != nil {
+				return false
+			}
+			if written <= 0 {
+				return false
+			}
+			data = data[written:]
+		}
+		return true
+	}
+	if !writeAll(header) {
+		return false
+	}
+	if !writeAll(body) {
+		return false
+	}
 	return true
 }
 

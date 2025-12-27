@@ -35,6 +35,17 @@ type BasePiece struct {
 	hp, mp, atk  int
 }
 
+func NewBasePiece(base *model.BaseCard, hp, mp, atk int, legalMoves, attackRanges []pkg.Point) *BasePiece {
+	return &BasePiece{
+		BaseCard:     *base,
+		legalMoves:   legalMoves,
+		attackRanges: attackRanges,
+		hp:           hp,
+		mp:           mp,
+		atk:          atk,
+	}
+}
+
 func (p *BasePiece) Type() model.CardType {
 	return model.CARD_TYPE_PIECE
 }

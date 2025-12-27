@@ -1,4 +1,4 @@
-package pvp
+package pve
 
 import (
 	"context"
@@ -26,7 +26,7 @@ type RequireRepositories struct {
 	cardRepo *repository.CardRepository
 }
 
-func Game(requireRepos RequireRepositories, ids [2]uuid.UUID, info GameInfo) {
+func Game(requireRepos RequireRepositories, id uuid.UUID, info GameInfo) {
 	_ = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
 		return nil
 	}, func(tag logic.EffectActionTag) logic.EffectAction {

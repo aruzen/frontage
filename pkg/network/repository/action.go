@@ -13,7 +13,7 @@ type ActionRepository struct {
 	effectFinder EffectActionFinder
 }
 
-func NewEffectRepository(m ModifyActionFinder, e EffectActionFinder) *ActionRepository {
+func NewActionRepository(m ModifyActionFinder, e EffectActionFinder) *ActionRepository {
 	return &ActionRepository{
 		modifyFinder: m,
 		effectFinder: e,

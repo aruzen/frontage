@@ -8,11 +8,16 @@ import (
 )
 
 var (
-	connectionTable   = make(map[uuid.UUID]*net.UDPConn)
+	connectionTable   = make(map[uuid.UUID]*ConnWithMutex)
 	connectionTableMu sync.RWMutex
 )
 
-func GetConnection(id uuid.UUID) *net.UDPConn {
+type ConnWithMutex struct {
+	Conn net.Conn
+	Mtx  sync.Mutex
+}
+
+func GetConnection(id uuid.UUID) *ConnWithMutex {
 	connectionTableMu.RLock()
 	defer connectionTableMu.RUnlock()
 	connection, ok := connectionTable[id]
@@ -22,10 +27,10 @@ func GetConnection(id uuid.UUID) *net.UDPConn {
 	return connection
 }
 
-func AddConnection(id uuid.UUID, conn *net.UDPConn) {
+func AddConnection(id uuid.UUID, conn net.Conn) {
 	connectionTableMu.Lock()
 	defer connectionTableMu.Unlock()
-	connectionTable[id] = conn
+	connectionTable[id] = &ConnWithMutex{conn, sync.Mutex{}}
 }
 
 func RemoveConnection(id uuid.UUID) {

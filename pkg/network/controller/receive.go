@@ -9,6 +9,7 @@ import (
 	"frontage/pkg/network/game_api"
 	"log/slog"
 	"net"
+	"time"
 )
 
 var (
@@ -20,22 +21,44 @@ const HeaderLength = 6
 func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Packet, lobbyChan chan network.Packet, gameChan chan network.Packet) error {
 	defer conn.Close()
 	header := make([]byte, HeaderLength)
-	body := make([]byte, 1024)
+	body := make([]byte, 0)
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		loaded := 0
 		for loaded < HeaderLength {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			_ = conn.SetReadDeadline(time.Now().Add(time.Second))
 			read, err := conn.Read(header[loaded:])
 			if err != nil {
+				if ne, ok := err.(net.Error); ok && ne.Timeout() {
+					continue
+				}
 				return err
 			}
 			loaded += read
 		}
 		packetTag := binary.LittleEndian.Uint16(header[:2])
 		packetLength := binary.LittleEndian.Uint32(header[2:6])
+		if int(packetLength) > cap(body) {
+			body = make([]byte, packetLength)
+		} else {
+			body = body[:packetLength]
+		}
 		loaded = 0
 		for loaded < int(packetLength) {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			_ = conn.SetReadDeadline(time.Now().Add(time.Second))
 			read, err := conn.Read(body[loaded:packetLength])
 			if err != nil {
+				if ne, ok := err.(net.Error); ok && ne.Timeout() {
+					continue
+				}
 				println("err body : ", read, string(body[:packetLength]))
 				return err
 			}
@@ -63,6 +86,10 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Pac
 		}
 		if err != nil {
 			slog.Error(err.Error())
+			continue
+		}
+		if packet == nil {
+			slog.Warn("unknown packet tag", "tag", packetTag)
 			continue
 		}
 		category := packetTag >> 14

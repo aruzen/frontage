@@ -18,6 +18,7 @@
 
 # Documents / local notes
 /document/
+/build/
 
 # Scripts (local)
 /scripts/

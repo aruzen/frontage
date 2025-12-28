@@ -10,13 +10,17 @@ import (
 // MoveBlocker cancels move events when the target cell is occupied.
 type MoveBlocker struct{}
 
-func (MoveBlocker) PreListen(es *logic.EventSystem, act logic.Action, state interface{}) {
+func (MoveBlocker) PreListen(es *logic.EventSystem, act logic.Action, state logic.ActionState) {
 	effect, ok := act.(logic.EffectAction)
 	if !ok || effect.Tag() != action.ENTITY_MOVE_ACTION {
 		return
 	}
-	moveState, ok := state.(piece_action.PieceMoveActionState)
-	if !ok || es == nil || es.Board == nil {
+	var moveState *piece_action.PieceMoveActionState
+	switch s := state.(type) {
+	case *piece_action.PieceMoveActionState:
+		moveState = s
+	}
+	if moveState == nil || es == nil || es.Board == nil {
 		return
 	}
 	to := moveState.To()
@@ -28,5 +32,5 @@ func (MoveBlocker) PreListen(es *logic.EventSystem, act logic.Action, state inte
 		return
 	}
 	cancel := common.CancelModifyAction{}
-	es.Chain(logic.NewModifyEvent(cancel, common.CancelState{Reason: "destination occupied"}))
+	es.Chain(logic.NewModifyEvent(cancel, &common.CancelState{Reason: "destination occupied"}))
 }

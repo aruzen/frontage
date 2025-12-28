@@ -7,6 +7,8 @@ type ActionSummary struct {
 }
 
 type ActionResult struct {
-	ActionTag string
-	Data      map[string]interface{}
+	ActionTag  string
+	Context    map[string]interface{}
+	State      map[string]interface{}
+	SummaryIdx int
 }

@@ -3,49 +3,51 @@ package translator
 import (
 	"frontage/pkg"
 	"frontage/pkg/engine/logic"
+	"frontage/pkg/engine/model"
 	"frontage/pkg/network/data"
 	"frontage/pkg/network/repository"
-	"reflect"
 )
 
 type ActionResultTranslator struct {
-	effectRepo repository.ActionRepository
+	effectRepo *repository.ActionRepository
 }
 
 type ActionSummaryTranslator struct {
-	effectRepo repository.ActionRepository
+	effectRepo *repository.ActionRepository
 }
 
-func NewActionResultTranslator(repo repository.ActionRepository) *ActionResultTranslator {
+func NewActionResultTranslator(repo *repository.ActionRepository) *ActionResultTranslator {
 	return &ActionResultTranslator{
 		effectRepo: repo,
 	}
 }
 
-func (t *ActionResultTranslator) ToModel(d data.ActionResult) (logic.ActionResult, error) {
+func (t *ActionResultTranslator) ToModel(b *model.Board, d data.ActionResult) (logic.ActionResult, error) {
 	action, err := t.effectRepo.FindEffect(logic.EffectActionTag(d.ActionTag))
 	if err != nil {
 		return logic.ActionResult{}, err
 	}
-	context, ok := reflect.New(action.WantContext()).Interface().(logic.EffectContext)
-	if !ok {
+	context := action.MakeContext(d.Context)
+	if context == nil {
 		return logic.ActionResult{}, ErrNewContextFailed
 	}
-	err = context.FromMap(d.Data)
-	if err != nil {
-		return logic.ActionResult{}, err
+	state := action.MakeState(b, d.State)
+	if state == nil {
+		return logic.ActionResult{}, ErrNewStateFailed
 	}
-	return logic.ActionResult{Action: action, Context: context}, err
+	return logic.ActionResult{Action: action, State: state, Context: context, SummaryIdx: d.SummaryIdx}, nil
 }
 
-func (t *ActionResultTranslator) FromModel(m logic.ActionResult) (data.ActionResult, error) {
-	return data.ActionResult{
-		ActionTag: string(m.Action.LocalizeTag()),
-		Data:      m.Context.ToMap(),
-	}, nil
+func (t *ActionResultTranslator) FromModel(l logic.ActionResult) (data.ActionResult, error) {
+	result := data.ActionResult{}
+	result.SummaryIdx = l.SummaryIdx
+	result.Context = l.Context.ToMap()
+	result.State = l.State.ToMap()
+	result.ActionTag = string(l.Action.LocalizeTag())
+	return result, nil
 }
 
-func NewActionSummaryTranslator(effectRepo repository.ActionRepository) *ActionSummaryTranslator {
+func NewActionSummaryTranslator(effectRepo *repository.ActionRepository) *ActionSummaryTranslator {
 	return &ActionSummaryTranslator{
 		effectRepo: effectRepo,
 	}
@@ -67,10 +69,10 @@ func (t *ActionSummaryTranslator) ToModel(d data.ActionSummary) (logic.ActionSum
 	return logic.ActionSummary{}, ErrNotFound
 }
 
-func (t *ActionSummaryTranslator) FromModel(m logic.ActionSummary) (data.ActionSummary, error) {
-	return data.ActionSummary{
-		ActionTag: string(m.Action.LocalizeTag()),
-		Type:      string(m.Type),
-		Data:      m.Data,
-	}, nil
+func (t *ActionSummaryTranslator) FromModel(l logic.ActionSummary) (data.ActionSummary, error) {
+	summary := data.ActionSummary{}
+	summary.Data = l.Data
+	summary.ActionTag = string(l.Action.LocalizeTag())
+	summary.Type = string(l.Type)
+	return summary, nil
 }

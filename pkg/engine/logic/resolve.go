@@ -33,12 +33,13 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 	}
 	summaries := make([]ActionSummary, 0, 3)
 	var tmpSummary Summary
+	summaryIdx := len(es.Summaries)
 	es.Summaries = append(es.Summaries, &summaries)
 
 	context, tmpSummary := e.action.Act(e.State(), beforeEffect, beforeContext)
 	appendSummary(&summaries, e.action, SUMMARY_TYPE_ACT, tmpSummary)
 
-	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
+	if e.modifier != nil && IntegrityCheck(e.modifier.action, e.modifier.state) {
 		context = e.modifier.Resolve(es, e.action, context, &summaries)
 	}
 
@@ -50,7 +51,7 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 	appendSummary(&summaries, e.action, SUMMARY_TYPE_SOLVE, tmpSummary)
 
 	for _, branch := range e.branch {
-		if !IntegrityCheck(branch.action, *branch.state) {
+		if !IntegrityCheck(branch.action, branch.state) {
 			slog.Warn("IntegrityCheck failed.")
 			continue
 		}
@@ -58,28 +59,30 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 	}
 
 	es.AppliedEffects = append(es.AppliedEffects, ActionResult{
-		Action:  e.action,
-		Context: context,
+		Action:     e.action,
+		State:      e.State(),
+		Context:    context,
+		SummaryIdx: summaryIdx,
 	})
 }
 
 func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context EffectContext, summaries *[]ActionSummary) EffectContext {
-	if !IntegrityCheck(e.action, *e.state) {
+	if !IntegrityCheck(e.action, e.state) {
 		slog.Warn("IntegrityCheck failed.")
 		return nil
 	}
-	context, tmpSummary := e.action.Modify(*e.state, context)
+	context, tmpSummary := e.action.Modify(e.state, context)
 	appendSummary(summaries, e.action, SUMMARY_TYPE_MODIFY, tmpSummary)
 
 	for _, branch := range e.branch {
-		if !IntegrityCheck(branch.action, *branch.state) {
+		if !IntegrityCheck(branch.action, branch.state) {
 			slog.Warn("IntegrityCheck failed.")
 			continue
 		}
 		branch.Resolve(es, effect, context)
 	}
 
-	if e.modifier != nil && IntegrityCheck(e.modifier.action, *e.modifier.state) {
+	if e.modifier != nil && IntegrityCheck(e.modifier.action, e.modifier.state) {
 		context = e.modifier.Resolve(es, effect, context, summaries)
 	}
 

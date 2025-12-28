@@ -4,14 +4,18 @@ import (
 	"context"
 	"fmt"
 	"frontage/internal/log"
+	"frontage/pkg/engine/impl/action"
 	action_register "frontage/pkg/engine/impl/action/register"
+	"frontage/pkg/engine/logic"
 	"frontage/pkg/network"
 	"frontage/pkg/network/controller"
 	"frontage/pkg/network/controller/pve"
 	"frontage/pkg/network/controller/pvp"
+	"frontage/pkg/network/game_dispatcher"
 	"frontage/pkg/network/lobby_handler"
 	"frontage/pkg/network/lobby_service"
 	"frontage/pkg/network/repository"
+	"frontage/pkg/network/translator"
 	"github.com/google/uuid"
 	"log/slog"
 	"net"
@@ -24,11 +28,19 @@ type entryAndExitInfo struct {
 	channel chan network.UnsolvedPacket
 }
 
-var matchRepo = repository.NewMatchRepository()
-var cardRepo = repository.NewCardRepository()
+var (
+	matchRepo  = repository.NewMatchRepository()
+	cardRepo   = repository.NewCardRepository()
+	actionRepo *repository.ActionRepository
+)
 
 func main() {
 	action_register.Init()
+	actionRepo = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
+		return nil
+	}, func(tag logic.EffectActionTag) logic.EffectAction {
+		return action.FindActionEffect(tag)
+	})
 	log.Init(true)
 
 	systemCtx := context.Background()
@@ -162,11 +174,16 @@ func lobbyLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
 		MatchMake: lobby_handler.NewMatchMakeHandler(
 			lobby_service.NewMatchMakeService(
 				matchRepo,
-				pvp.RequireRepositories{
+				pvp.RequireContents{
 					cardRepo,
 				},
-				pve.RequireRepositories{
+				pve.RequireContents{
+					actionRepo,
 					cardRepo,
+					game_dispatcher.NewActEventDispatcher(
+						translator.NewActionResultTranslator(actionRepo),
+						translator.NewActionSummaryTranslator(actionRepo)),
+					game_dispatcher.NewGameInitializeDispatcher(),
 				}),
 			matchRepo),
 	}

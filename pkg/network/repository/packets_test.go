@@ -1,14 +1,14 @@
-package network
+package repository
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"frontage/pkg/network"
 	"io"
 	"net"
 	"testing"
 
-	"frontage/pkg/network/repository"
 	"github.com/google/uuid"
 )
 
@@ -17,17 +17,17 @@ type testPacket struct {
 	Value int    `json:"value"`
 }
 
-func (testPacket) PacketTag() PacketTag { return 0x1234 }
+func (testPacket) PacketTag() network.PacketTag { return 0x1234 }
 
 type badPacket struct {
 	F func()
 }
 
-func (badPacket) PacketTag() PacketTag { return 0x0002 }
+func (badPacket) PacketTag() network.PacketTag { return 0x0002 }
 
 func TestSendPacket_NoConnection(t *testing.T) {
 	id := uuid.New()
-	repository.RemoveConnection(id)
+	RemoveConnection(id)
 
 	if SendPacket(id, testPacket{Name: "x", Value: 1}) {
 		t.Fatalf("expected false when connection is missing")
@@ -37,9 +37,9 @@ func TestSendPacket_NoConnection(t *testing.T) {
 func TestSendPacket_MarshalError(t *testing.T) {
 	id := uuid.New()
 	c1, c2 := net.Pipe()
-	repository.AddConnection(id, c1)
+	AddConnection(id, c1)
 	t.Cleanup(func() {
-		repository.RemoveConnection(id)
+		RemoveConnection(id)
 		_ = c1.Close()
 		_ = c2.Close()
 	})
@@ -52,9 +52,9 @@ func TestSendPacket_MarshalError(t *testing.T) {
 func TestSendPacket_Success(t *testing.T) {
 	id := uuid.New()
 	c1, c2 := net.Pipe()
-	repository.AddConnection(id, c1)
+	AddConnection(id, c1)
 	t.Cleanup(func() {
-		repository.RemoveConnection(id)
+		RemoveConnection(id)
 		_ = c1.Close()
 		_ = c2.Close()
 	})

@@ -1,99 +1,120 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
-	"encoding/json"
-	"io"
 	"net"
 	"testing"
 	"time"
 
 	"frontage/pkg/network"
-	"frontage/pkg/network/game_api"
+	"frontage/pkg/network/repository"
 )
 
-// helper to build a packet with header (tag + length) and JSON body
-func buildPacket(tag network.PacketTag, body any) ([]byte, error) {
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
+func buildRawPacket(tag network.PacketTag, body []byte) []byte {
+	header := make([]byte, 6)
+	binary.LittleEndian.PutUint16(header[:2], uint16(tag))
+	binary.LittleEndian.PutUint32(header[2:6], uint32(len(body)))
+	return append(header, body...)
+}
+
+func readPacket(t *testing.T, ch <-chan network.UnsolvedPacket, wantTag network.PacketTag, wantBody []byte) {
+	t.Helper()
+	select {
+	case pkt := <-ch:
+		if pkt.Tag != wantTag {
+			t.Fatalf("unexpected tag: got %d want %d", pkt.Tag, wantTag)
+		}
+		if string(pkt.Body) != string(wantBody) {
+			t.Fatalf("unexpected body: got %q want %q", string(pkt.Body), string(wantBody))
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("timeout waiting for tag %d", wantTag)
 	}
-	head := make([]byte, 6)
-	binary.LittleEndian.PutUint16(head[:2], uint16(tag))
-	binary.LittleEndian.PutUint32(head[2:6], uint32(len(jsonBody)))
-	return append(head, jsonBody...), nil
 }
-
-// fakeConn is a minimal net.Conn backed by a bytes.Buffer for reads.
-type fakeConn struct {
-	buf *bytes.Reader
-}
-
-func (f *fakeConn) Read(p []byte) (int, error)         { return f.buf.Read(p) }
-func (f *fakeConn) Write(p []byte) (int, error)        { return len(p), nil }
-func (f *fakeConn) Close() error                       { return nil }
-func (f *fakeConn) LocalAddr() net.Addr                { return nil }
-func (f *fakeConn) RemoteAddr() net.Addr               { return nil }
-func (f *fakeConn) SetDeadline(t time.Time) error      { return nil }
-func (f *fakeConn) SetReadDeadline(t time.Time) error  { return nil }
-func (f *fakeConn) SetWriteDeadline(t time.Time) error { return nil }
-
-// Wrap fakeConn to satisfy *net.TCPConn requirement using interface alias.
-type tcpFake struct{ fakeConn }
 
 func TestReceiveLoopRoutesPackets(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	systemCh := make(chan network.Packet, 1)
-	lobbyCh := make(chan network.Packet, 1)
-	gameCh := make(chan network.Packet, 1)
+	serverConn, clientConn := net.Pipe()
+	defer func() {
+		_ = clientConn.Close()
+		_ = serverConn.Close()
+	}()
 
-	// Build one ACT_EVENT packet (Game flag) and one GAME_INITIALIZE packet (Game flag)
-	act, err := buildPacket(network.ACT_EVENT_PACKET_TAG, game_api.ActEventPacket{Events: []game_api.ActEventPayload{{}}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	init, err := buildPacket(network.GAME_INITIALIZE_PACKET_TAG, game_api.GameInitializePacket{Width: 7, Height: 7, YourSide: 0})
-	if err != nil {
-		t.Fatal(err)
-	}
-	data := append(act, init...)
-
-	conn := &tcpFake{fakeConn{buf: bytes.NewReader(data)}}
+	systemCh := make(chan network.UnsolvedPacket, 1)
+	lobbyCh := make(chan network.UnsolvedPacket, 1)
+	gameBarrier := &repository.BarrierGameChannel{Chan: make(chan network.UnsolvedPacket, 1)}
+	gameBarrier.Living.Store(true)
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- ReceiveLoop(ctx, conn, systemCh, lobbyCh, gameCh)
+		errCh <- ReceiveLoop(ctx, serverConn, systemCh, lobbyCh, gameBarrier)
 	}()
 
-	// consume two packets
-	var got []network.Packet
-	for i := 0; i < 2; i++ {
-		select {
-		case p := <-gameCh:
-			got = append(got, p)
-		case err := <-errCh:
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				t.Fatalf("ReceiveLoop returned error: %v", err)
-			}
-		case <-time.After(time.Second):
-			t.Fatalf("timeout waiting packet %d", i)
-		}
+	systemBody := []byte("sys")
+	lobbyBody := []byte("lobby")
+	gameBody := []byte("game")
+
+	payload := append(buildRawPacket(0, systemBody), buildRawPacket(network.WAIT_MATCH_MAKE_PACKET_TAG, lobbyBody)...)
+	payload = append(payload, buildRawPacket(network.GAME_INITIALIZE_PACKET_TAG, gameBody)...)
+
+	if _, err := clientConn.Write(payload); err != nil {
+		t.Fatalf("write payload: %v", err)
 	}
 
-	if len(got) != 2 {
-		t.Fatalf("expected 2 packets, got %d", len(got))
+	readPacket(t, systemCh, 0, systemBody)
+	readPacket(t, lobbyCh, network.WAIT_MATCH_MAKE_PACKET_TAG, lobbyBody)
+	readPacket(t, gameBarrier.Chan, network.GAME_INITIALIZE_PACKET_TAG, gameBody)
+
+	cancel()
+	select {
+	case <-errCh:
+	case <-time.After(time.Second):
 	}
-	if _, ok := got[0].(game_api.ActEventPacket); !ok {
-		t.Fatalf("first packet type mismatch: %T", got[0])
+}
+
+func TestReceiveLoopGameBarrier(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	serverConn, clientConn := net.Pipe()
+	defer func() {
+		_ = clientConn.Close()
+		_ = serverConn.Close()
+	}()
+
+	systemCh := make(chan network.UnsolvedPacket, 1)
+	lobbyCh := make(chan network.UnsolvedPacket, 1)
+	gameBarrier := &repository.BarrierGameChannel{Chan: make(chan network.UnsolvedPacket, 1)}
+	gameBarrier.Living.Store(false)
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- ReceiveLoop(ctx, serverConn, systemCh, lobbyCh, gameBarrier)
+	}()
+
+	if _, err := clientConn.Write(buildRawPacket(network.GAME_INITIALIZE_PACKET_TAG, []byte("g1"))); err != nil {
+		t.Fatalf("write payload: %v", err)
 	}
-	if _, ok := got[1].(game_api.GameInitializePacket); !ok {
-		t.Fatalf("second packet type mismatch: %T", got[1])
+
+	select {
+	case pkt := <-gameBarrier.Chan:
+		t.Fatalf("unexpected game packet: %+v", pkt)
+	case <-time.After(300 * time.Millisecond):
+	}
+
+	gameBarrier.Living.Store(true)
+	if _, err := clientConn.Write(buildRawPacket(network.GAME_INITIALIZE_PACKET_TAG, []byte("g2"))); err != nil {
+		t.Fatalf("write payload: %v", err)
+	}
+
+	readPacket(t, gameBarrier.Chan, network.GAME_INITIALIZE_PACKET_TAG, []byte("g2"))
+
+	cancel()
+	select {
+	case <-errCh:
+	case <-time.After(time.Second):
 	}
 }

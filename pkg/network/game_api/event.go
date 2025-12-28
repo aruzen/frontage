@@ -5,13 +5,9 @@ import (
 	"frontage/pkg/network/data"
 )
 
-type ActEventPayload struct {
-	Result  data.ActionResult
-	Summary []data.ActionSummary
-}
-
 type ActEventPacket struct {
-	Events []ActEventPayload
+	Events    []data.ActionResult
+	Summaries [][]data.ActionSummary
 }
 
 func (p ActEventPacket) PacketTag() network.PacketTag {

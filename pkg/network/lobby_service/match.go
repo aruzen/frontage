@@ -13,11 +13,11 @@ import (
 
 type MatchMakeService struct {
 	matchRepo *repository.MatchRepository
-	pvpRepos  pvp.RequireRepositories
-	pveRepos  pve.RequireRepositories
+	pvpRepos  pvp.RequireContents
+	pveRepos  pve.RequireContents
 }
 
-func NewMatchMakeService(matchRepo *repository.MatchRepository, pvp pvp.RequireRepositories, pve pve.RequireRepositories) *MatchMakeService {
+func NewMatchMakeService(matchRepo *repository.MatchRepository, pvp pvp.RequireContents, pve pve.RequireContents) *MatchMakeService {
 	return &MatchMakeService{matchRepo, pvp, pve}
 }
 

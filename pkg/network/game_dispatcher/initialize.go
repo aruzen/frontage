@@ -10,11 +10,11 @@ import (
 type GameInitializeDispatcher struct {
 }
 
-func NewGameInitializePacket() *GameInitializeDispatcher {
+func NewGameInitializeDispatcher() *GameInitializeDispatcher {
 	return &GameInitializeDispatcher{}
 }
 
-func (d *GameInitializeDispatcher) DispatchPacket(b *model.Board, p model.Player) ([]byte, error) {
+func (d *GameInitializeDispatcher) DispatchPacket(b *model.Board, p model.Player) (game_api.GameInitializePacket, error) {
 	packet := game_api.GameInitializePacket{
 		Width:  b.Size().Width,
 		Height: b.Size().Height,
@@ -25,7 +25,7 @@ func (d *GameInitializeDispatcher) DispatchPacket(b *model.Board, p model.Player
 	} else {
 		packet.YourSide = 1
 	}
-	return json.Marshal(packet)
+	return packet, nil
 }
 
 type OpponentPlayerInitializeDispatcher struct{}

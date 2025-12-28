@@ -170,15 +170,15 @@ func (e PieceOperateActionState) Value() int {
 	return e.value
 }
 
-func (b basePieceHPAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if pieceState, ok := state.(PieceOperateActionState); ok {
+func (b basePieceHPAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if pieceState, ok := state.(*PieceOperateActionState); ok {
 		return &PieceHPContext{event.NewBaseEffectContext(), pieceState.value}, logic.Summary{"value": pieceState.value}
 	}
 	slog.Warn("State was not PieceOperateActionState.")
 	return nil, nil
 }
 
-func (e PieceHPIncreaseAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceHPIncreaseAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -190,7 +190,7 @@ func (e PieceHPIncreaseAction) Solve(board *model.Board, state interface{}, c lo
 	return board, logic.Summary{"delta_hp": context.Value}
 }
 
-func (e PieceHPDecreaseAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceHPDecreaseAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -202,7 +202,7 @@ func (e PieceHPDecreaseAction) Solve(board *model.Board, state interface{}, c lo
 	return board, logic.Summary{"delta_hp": -context.Value}
 }
 
-func (e PieceHPFixAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceHPFixAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -214,15 +214,15 @@ func (e PieceHPFixAction) Solve(board *model.Board, state interface{}, c logic.E
 	return board, logic.Summary{"set_hp": context.Value}
 }
 
-func (b basePieceMPAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if pieceState, ok := state.(PieceOperateActionState); ok {
+func (b basePieceMPAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if pieceState, ok := state.(*PieceOperateActionState); ok {
 		return &PieceMPContext{event.NewBaseEffectContext(), pieceState.value}, logic.Summary{"value": pieceState.value}
 	}
 	slog.Warn("State was not PieceOperateActionState.")
 	return nil, nil
 }
 
-func (e PieceMPIncreaseAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceMPIncreaseAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -234,7 +234,7 @@ func (e PieceMPIncreaseAction) Solve(board *model.Board, state interface{}, c lo
 	return board, logic.Summary{"delta_mp": context.Value}
 }
 
-func (e PieceMPDecreaseAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceMPDecreaseAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -246,7 +246,7 @@ func (e PieceMPDecreaseAction) Solve(board *model.Board, state interface{}, c lo
 	return board, logic.Summary{"delta_mp": -context.Value}
 }
 
-func (e PieceMPFixAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceMPFixAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -258,15 +258,15 @@ func (e PieceMPFixAction) Solve(board *model.Board, state interface{}, c logic.E
 	return board, logic.Summary{"set_mp": context.Value}
 }
 
-func (b basePieceATKAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if pieceState, ok := state.(PieceOperateActionState); ok {
+func (b basePieceATKAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if pieceState, ok := state.(*PieceOperateActionState); ok {
 		return &PieceATKContext{event.NewBaseEffectContext(), pieceState.value}, logic.Summary{"value": pieceState.value}
 	}
 	slog.Warn("State was not PieceOperateActionState.")
 	return nil, nil
 }
 
-func (e PieceATKIncreaseAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceATKIncreaseAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -278,7 +278,7 @@ func (e PieceATKIncreaseAction) Solve(board *model.Board, state interface{}, c l
 	return board, logic.Summary{"delta_atk": context.Value}
 }
 
-func (e PieceATKDecreaseAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceATKDecreaseAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")
@@ -290,7 +290,7 @@ func (e PieceATKDecreaseAction) Solve(board *model.Board, state interface{}, c l
 	return board, logic.Summary{"delta_atk": -context.Value}
 }
 
-func (e PieceATKFixAction) Solve(board *model.Board, state interface{}, c logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceATKFixAction) Solve(board *model.Board, state logic.ActionState, c logic.EffectContext) (*model.Board, logic.Summary) {
 	pieceState, context, ok := e.CastStateContext(state, c)
 	if !ok {
 		slog.Warn("CastStateContext failed.")

@@ -21,11 +21,11 @@ func ParseGamePacket(parsers GamePacketParsers, tag network.PacketTag, data []by
 		if parsers.ActEvent == nil {
 			return nil, ErrMissingHandler
 		}
-		events, err := parsers.ActEvent.ServePacket(data)
+		packet, err := parsers.ActEvent.ServePacket(data)
 		if err != nil {
 			return nil, err
 		}
-		return game_api.ActEventPacket{Events: events}, nil
+		return packet, nil
 	case network.GAME_INITIALIZE_PACKET_TAG:
 		if parsers.GameInitialize == nil {
 			return nil, ErrMissingHandler

@@ -2,7 +2,7 @@ package logic
 
 type Event interface {
 	Parent() Event
-	State() interface{}
+	State() ActionState
 	Action() Action
 	base() *baseEvent
 }
@@ -11,7 +11,7 @@ type baseEvent struct {
 	parent   Event
 	branch   []*EffectEvent
 	modifier *ModifyEvent
-	state    *interface{}
+	state    ActionState
 }
 
 type EffectEvent struct {
@@ -28,8 +28,8 @@ func (e *baseEvent) Parent() Event {
 	return e.parent
 }
 
-func (e *baseEvent) State() interface{} {
-	return *e.state
+func (e *baseEvent) State() ActionState {
+	return e.state
 }
 
 func (e *EffectEvent) Action() Action {
@@ -48,18 +48,18 @@ func (e *ModifyEvent) base() *baseEvent {
 	return &e.baseEvent
 }
 
-func NewEvent(a Action, state interface{}) Event {
+func NewEvent(a Action, state ActionState) Event {
 	if effect, ok := a.(EffectAction); ok {
 		return &EffectEvent{
 			baseEvent: baseEvent{
-				state: &state,
+				state: state,
 			},
 			action: effect,
 		}
 	} else if modifier, ok := a.(ModifyAction); ok {
 		return &ModifyEvent{
 			baseEvent: baseEvent{
-				state: &state,
+				state: state,
 			},
 			action: modifier,
 		}
@@ -67,19 +67,19 @@ func NewEvent(a Action, state interface{}) Event {
 	return nil
 }
 
-func NewEffectEvent(a EffectAction, state interface{}) *EffectEvent {
+func NewEffectEvent(a EffectAction, state ActionState) *EffectEvent {
 	return &EffectEvent{
 		baseEvent: baseEvent{
-			state: &state,
+			state: state,
 		},
 		action: a,
 	}
 }
 
-func NewModifyEvent(a ModifyAction, state interface{}) *ModifyEvent {
+func NewModifyEvent(a ModifyAction, state ActionState) *ModifyEvent {
 	return &ModifyEvent{
 		baseEvent: baseEvent{
-			state: &state,
+			state: state,
 		},
 		action: a,
 	}

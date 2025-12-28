@@ -22,11 +22,11 @@ func DefaultGameInfo() GameInfo {
 	}
 }
 
-type RequireRepositories struct {
+type RequireContents struct {
 	CardRepo *repository.CardRepository
 }
 
-func Game(ctx context.Context, requireRepos RequireRepositories, ids [2]uuid.UUID, info GameInfo) {
+func Game(ctx context.Context, requireRepos RequireContents, ids [2]uuid.UUID, info GameInfo) {
 	_ = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
 		return nil
 	}, func(tag logic.EffectActionTag) logic.EffectAction {
@@ -103,7 +103,7 @@ func Game(ctx context.Context, requireRepos RequireRepositories, ids [2]uuid.UUI
 	es := &logic.EventSystem{
 		Board: board,
 	}
-	es.Emit(logic.NewEffectEvent(logic.GAME_START_ACTION, logic.GAME_START_ACTION.MakeState()))
+	es.Emit(logic.NewEffectEvent(logic.GAME_START_ACTION, logic.GAME_START_ACTION.MakeState(board, nil)))
 
 	gameCtx := ctx
 	if gameCtx == nil {

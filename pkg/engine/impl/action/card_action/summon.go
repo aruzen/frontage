@@ -43,7 +43,7 @@ func (s PieceSummonActionState) ToMap() map[string]interface{} {
 		"holder_id": s.holderID.String(),
 		"card_id":   s.cardID.String(),
 		"summon_id": s.summonID.String(),
-		"deck_type": s.deckType,
+		"deck_type": int(s.deckType),
 		"point":     pkg.PointToMap(s.point),
 	}
 }
@@ -141,8 +141,8 @@ func (a PieceSummonAction) LocalizeTag() pkg.LocalizeTag {
 	return pkg.LocalizeTag(a.Tag())
 }
 
-func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceSummonActionState); ok {
+func (e PieceSummonAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceSummonActionState); ok {
 		return &PieceSummonActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.point},
 			logic.Summary{"point": pkg.PointToMap(s.point)}
 	}
@@ -150,7 +150,7 @@ func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectActio
 	return nil, nil
 }
 
-func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceSummonAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok || board == nil {
 		return board, nil

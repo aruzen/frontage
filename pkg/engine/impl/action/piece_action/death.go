@@ -88,15 +88,15 @@ func (a PieceDeathAction) LocalizeTag() pkg.LocalizeTag {
 	return pkg.LocalizeTag(a.Tag())
 }
 
-func (e PieceDeathAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceDeathActionState); ok {
+func (e PieceDeathAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceDeathActionState); ok {
 		return &PieceDeathActionContext{BaseEffectContext: event.BaseEffectContext{}, Reason: ""},
 			logic.Summary{"piece_id": s.pieceID.String()}
 	}
 	return nil, nil
 }
 
-func (e PieceDeathAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceDeathAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, _, ok := e.CastStateContext(state, context)
 	if !ok || board == nil {
 		return board, nil
@@ -121,8 +121,8 @@ func (a PieceDeathByBurnAction) LocalizeTag() pkg.LocalizeTag {
 	return pkg.LocalizeTag(a.Tag())
 }
 
-func (e PieceDeathByBurnAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceDeathActionState); ok {
+func (e PieceDeathByBurnAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceDeathActionState); ok {
 		return &PieceDeathActionContext{BaseEffectContext: event.BaseEffectContext{}, Reason: "burn"},
 			logic.Summary{"piece_id": s.pieceID.String(), "reason": "burn"}
 	}
@@ -138,8 +138,8 @@ func (a PieceDeathByAttackAction) LocalizeTag() pkg.LocalizeTag {
 	return pkg.LocalizeTag(a.Tag())
 }
 
-func (e PieceDeathByAttackAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceDeathActionState); ok {
+func (e PieceDeathByAttackAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceDeathActionState); ok {
 		return &PieceDeathActionContext{BaseEffectContext: event.BaseEffectContext{}, Reason: "attack"},
 			logic.Summary{"piece_id": s.pieceID.String(), "reason": "attack"}
 	}
@@ -155,8 +155,8 @@ func (a PieceDeathByInvasionAction) LocalizeTag() pkg.LocalizeTag {
 	return pkg.LocalizeTag(a.Tag())
 }
 
-func (e PieceDeathByInvasionAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceDeathActionState); ok {
+func (e PieceDeathByInvasionAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceDeathActionState); ok {
 		return &PieceDeathActionContext{BaseEffectContext: event.BaseEffectContext{}, Reason: "invasion"},
 			logic.Summary{"piece_id": s.pieceID.String(), "reason": "invasion"}
 	}

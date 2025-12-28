@@ -8,11 +8,11 @@ import (
 )
 
 type PreListener interface {
-	PreListen(es *EventSystem, event Action, state interface{})
+	PreListen(es *EventSystem, event Action, state ActionState)
 }
 
 type RunningListener interface {
-	RunningListen(es *EventSystem, event Action, state interface{})
+	RunningListen(es *EventSystem, event Action, state ActionState)
 }
 
 type EventSystem struct {
@@ -24,19 +24,19 @@ type EventSystem struct {
 	Summaries      []*[]ActionSummary
 }
 
-func PreListenHelper(es *EventSystem, maybe interface{}, action Action, state interface{}) {
+func PreListenHelper(es *EventSystem, maybe interface{}, action Action, state ActionState) {
 	if listener, ok := maybe.(PreListener); ok {
 		listener.PreListen(es, action, state)
 	}
 }
 
-func RunningListenHelper(es *EventSystem, maybe interface{}, action Action, state interface{}) {
+func RunningListenHelper(es *EventSystem, maybe interface{}, action Action, state ActionState) {
 	if listener, ok := maybe.(RunningListener); ok {
 		listener.RunningListen(es, action, state)
 	}
 }
 
-func (es *EventSystem) transmission(listenHelper func(es *EventSystem, maybe interface{}, action Action, state interface{}), event Event) {
+func (es *EventSystem) transmission(listenHelper func(es *EventSystem, maybe interface{}, action Action, state ActionState), event Event) {
 	es.active = event
 	players := es.Board.Players()
 	for i := range players {
@@ -133,12 +133,20 @@ func (es *EventSystem) ChainLine(event Event, pending ...Event) {
 	}
 }
 
-func IntegrityCheck(a Action, state interface{}) bool {
+func IntegrityCheck(a Action, state ActionState) bool {
 	if a == nil {
 		return false
 	}
-	if reflect.TypeOf(state) != a.WantState() {
+	if state == nil {
 		return false
 	}
-	return true
+	stateType := reflect.TypeOf(state)
+	want := a.WantState()
+	if stateType == want {
+		return true
+	}
+	if stateType.Kind() == reflect.Pointer && stateType.Elem() == want {
+		return true
+	}
+	return false
 }

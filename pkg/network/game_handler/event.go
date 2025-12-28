@@ -3,17 +3,24 @@ package game_handler
 import (
 	"encoding/json"
 	"frontage/pkg/network/game_api"
+	"frontage/pkg/network/repository"
 )
 
 // ActEventHandler parses incoming action event packets.
-type ActEventHandler struct{}
+type ActEventHandler struct {
+	actionRepo *repository.ActionRepository
+}
 
-func NewActEventHandler() *ActEventHandler { return &ActEventHandler{} }
+func NewActEventHandler(actionRepo *repository.ActionRepository) *ActEventHandler {
+	return &ActEventHandler{
+		actionRepo: actionRepo,
+	}
+}
 
-func (h *ActEventHandler) ServePacket(data []byte) ([]game_api.ActEventPayload, error) {
+func (h *ActEventHandler) ServePacket(data []byte) (game_api.ActEventPacket, error) {
 	var packet game_api.ActEventPacket
 	if err := json.Unmarshal(data, &packet); err != nil {
-		return nil, err
+		return game_api.ActEventPacket{}, err
 	}
-	return packet.Events, nil
+	return packet, nil
 }

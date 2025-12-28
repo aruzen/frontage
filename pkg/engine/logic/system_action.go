@@ -8,6 +8,14 @@ import (
 type SystemNoticeState struct {
 }
 
+func (s SystemNoticeState) ToMap() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
+func (s *SystemNoticeState) FromMap(_ *model.Board, _ map[string]interface{}) error {
+	return nil
+}
+
 type SystemNoticeContext struct {
 }
 
@@ -76,16 +84,12 @@ func (s *SystemNoticeContext) FromMap(_ map[string]interface{}) error {
 	return nil
 }
 
-func (s systemNoticeAction) MakeState() interface{} {
-	return SystemNoticeState{}
+func (s systemNoticeAction) Act(state ActionState, beforeAction EffectAction, beforeContext EffectContext) (EffectContext, Summary) {
+	return &SystemNoticeContext{}, Summary{}
 }
 
-func (s systemNoticeAction) Act(state interface{}, beforeAction EffectAction, beforeContext EffectContext) (EffectContext, Summary) {
-	return &SystemNoticeContext{}, nil
-}
-
-func (s systemNoticeAction) Solve(board *model.Board, state interface{}, context EffectContext) (*model.Board, Summary) {
-	return board, nil
+func (s systemNoticeAction) Solve(board *model.Board, state ActionState, context EffectContext) (*model.Board, Summary) {
+	return board, Summary{}
 }
 
 var (

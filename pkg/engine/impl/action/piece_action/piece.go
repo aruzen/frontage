@@ -278,14 +278,14 @@ func (a PieceMoveAction) LocalizeTag() pkg.LocalizeTag     { return pkg.Localize
 func (a PieceAttackAction) LocalizeTag() pkg.LocalizeTag   { return pkg.LocalizeTag(a.Tag()) }
 func (a PieceInvasionAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
-func (e PieceSummonAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceSummonActionState); ok {
+func (e PieceSummonAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceSummonActionState); ok {
 		return &PieceSummonActionContext{event.BaseEffectContext{}, s.point, s.piece}, logic.Summary{"point": pkg.PointToMap(s.point)}
 	}
 	return nil, nil
 }
 
-func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceSummonAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	_, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return nil, nil
@@ -297,14 +297,14 @@ func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context 
 	return board, logic.Summary{"placed_at": pkg.PointToMap(c.Point)}
 }
 
-func (e PieceMoveAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceMoveActionState); ok {
+func (e PieceMoveAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceMoveActionState); ok {
 		return &PieceMoveActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.to, ActionCost: s.actionCost}, logic.Summary{"from": pkg.PointToMap(s.from), "to": pkg.PointToMap(s.to)}
 	}
 	return nil, nil
 }
 
-func (e PieceMoveAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceMoveAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return nil, nil
@@ -321,14 +321,14 @@ func (e PieceMoveAction) Solve(board *model.Board, state interface{}, context lo
 	return board, logic.Summary{"to": pkg.PointToMap(c.Point)}
 }
 
-func (e PieceAttackAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceAttackActionState); ok {
+func (e PieceAttackAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceAttackActionState); ok {
 		return &PieceAttackActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.point, Value: s.value, ActionCost: s.actionCost}, logic.Summary{"target": pkg.PointToMap(s.point)}
 	}
 	return nil, nil
 }
 
-func (e PieceAttackAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceAttackAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return board, nil
@@ -357,8 +357,8 @@ func (e PieceAttackAction) Solve(board *model.Board, state interface{}, context 
 	return board, logic.Summary{"target": pkg.PointToMap(c.Point), "value": c.Value}
 }
 
-func (e PieceAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
-	s, ok := state.(PieceAttackActionState)
+func (e PieceAttackAction) SubEffects(state logic.ActionState) []*logic.EffectEvent {
+	s, ok := state.(*PieceAttackActionState)
 	if !ok {
 		return nil
 	}
@@ -371,14 +371,14 @@ func (e PieceAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
 	}
 }
 
-func (e PieceInvasionAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
-	if s, ok := state.(PieceAttackActionState); ok {
+func (e PieceInvasionAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(*PieceAttackActionState); ok {
 		return &PieceAttackActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.point, Value: s.value, ActionCost: s.actionCost}, logic.Summary{"target": pkg.PointToMap(s.point)}
 	}
 	return nil, nil
 }
 
-func (e PieceInvasionAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+func (e PieceInvasionAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
 		return board, nil
@@ -407,8 +407,8 @@ func (e PieceInvasionAction) Solve(board *model.Board, state interface{}, contex
 	return board, logic.Summary{"target": pkg.PointToMap(c.Point), "value": c.Value}
 }
 
-func (e PieceInvasionAction) SubEffects(state interface{}) []*logic.EffectEvent {
-	s, ok := state.(PieceAttackActionState)
+func (e PieceInvasionAction) SubEffects(state logic.ActionState) []*logic.EffectEvent {
+	s, ok := state.(*PieceAttackActionState)
 	if !ok {
 		return nil
 	}
@@ -422,7 +422,7 @@ func (e PieceInvasionAction) SubEffects(state interface{}) []*logic.EffectEvent 
 	}
 	return []*logic.EffectEvent{
 		logic.NewEffectEvent(entityDecrease, s.decreaseHPState),
-		logic.NewEffectEvent(entityMove, PieceMoveActionState{
+		logic.NewEffectEvent(entityMove, &PieceMoveActionState{
 			pieceID:    s.pieceID,
 			from:       s.piece.Position(),
 			to:         s.point,

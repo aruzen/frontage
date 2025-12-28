@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	connectionTable   = make(map[uuid.UUID]*ConnWithMutex)
-	connectionTableMu sync.RWMutex
+	connectionTable = make(map[uuid.UUID]*ConnWithMutex)
 )
 
 type ConnWithMutex struct {

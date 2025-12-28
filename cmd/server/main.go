@@ -17,7 +17,7 @@ import (
 type entryAndExitInfo struct {
 	id      uuid.UUID
 	isEntry bool
-	channel chan network.Packet
+	channel chan network.UnsolvedPacket
 }
 
 func main() {
@@ -59,9 +59,9 @@ func main() {
 			repository.AddConnection(id, conn)
 			defer repository.RemoveConnection(id)
 
-			systemChan := make(chan network.Packet)
-			lobbyChan := make(chan network.Packet)
-			gameChan := make(chan network.Packet)
+			systemChan := make(chan network.UnsolvedPacket)
+			lobbyChan := make(chan network.UnsolvedPacket)
+			gameChan := make(chan network.UnsolvedPacket)
 			systemVisitPlayer <- entryAndExitInfo{
 				id:      id,
 				isEntry: true,
@@ -72,21 +72,26 @@ func main() {
 				isEntry: true,
 				channel: lobbyChan,
 			}
-			err = controller.ReceiveLoop(systemCtx, conn, systemChan, lobbyChan, gameChan)
+			barrierGameChan := repository.AddGameChannel(id, gameChan)
+			defer func() {
+				systemVisitPlayer <- entryAndExitInfo{
+					id:      id,
+					isEntry: false,
+					channel: nil,
+				}
+				lobbyVisitPlayer <- entryAndExitInfo{
+					id:      id,
+					isEntry: false,
+					channel: nil,
+				}
+				repository.RemoveGameChannel(id)
+			}()
+			err = controller.ReceiveLoop(systemCtx, conn, systemChan, lobbyChan, barrierGameChan)
 			if err != nil {
 				slog.Error("Failed to receive loop packet", "err", err)
 				return
 			}
-			systemVisitPlayer <- entryAndExitInfo{
-				id:      id,
-				isEntry: false,
-				channel: nil,
-			}
-			lobbyVisitPlayer <- entryAndExitInfo{
-				id:      id,
-				isEntry: false,
-				channel: nil,
-			}
+
 		}()
 	}
 	systemFinish()

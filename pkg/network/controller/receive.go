@@ -3,11 +3,9 @@ package controller
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"frontage/pkg/network"
-	"frontage/pkg/network/game_api"
-	"log/slog"
+	"frontage/pkg/network/repository"
 	"net"
 	"time"
 )
@@ -18,7 +16,8 @@ var (
 
 const HeaderLength = 6
 
-func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Packet, lobbyChan chan network.Packet, gameChan chan network.Packet) error {
+func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.UnsolvedPacket,
+	lobbyChan chan network.UnsolvedPacket, gameChan *repository.BarrierGameChannel) error {
 	defer conn.Close()
 	header := make([]byte, HeaderLength)
 	body := make([]byte, 0)
@@ -64,7 +63,32 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Pac
 			}
 			loaded += read
 		}
-		var packet network.Packet
+		category := packetTag >> 14
+		switch network.PacketTag(category) {
+		case network.SystemPacketFlag:
+			systemChan <- network.UnsolvedPacket{
+				network.PacketTag(packetTag),
+				body,
+			}
+		case network.LobbyPacketFlag:
+			lobbyChan <- network.UnsolvedPacket{
+				network.PacketTag(packetTag),
+				body,
+			}
+		case network.GamePacketFlag:
+			if gameChan.Living.Load() {
+				gameChan.Chan <- network.UnsolvedPacket{
+					network.PacketTag(packetTag),
+					body,
+				}
+			}
+		}
+	}
+	return nil
+}
+
+/*
+var packet network.Packet
 		var err error
 		switch network.PacketTag(packetTag) {
 		case network.ACT_EVENT_PACKET_TAG:
@@ -92,15 +116,4 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Pac
 			slog.Warn("unknown packet tag", "tag", packetTag)
 			continue
 		}
-		category := packetTag >> 14
-		switch network.PacketTag(category) {
-		case network.SystemPacketFlag:
-			systemChan <- packet
-		case network.LobbyPacketFlag:
-			lobbyChan <- packet
-		case network.GamePacketFlag:
-			gameChan <- packet
-		}
-	}
-	return nil
-}
+*/

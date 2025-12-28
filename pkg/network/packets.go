@@ -17,6 +17,11 @@ type PacketHeader struct {
 	PacketTag PacketTag
 }
 
+type UnsolvedPacket struct {
+	Tag  PacketTag
+	Body []byte
+}
+
 func SendPacket(id uuid.UUID, h Packet) bool {
 	connection := repository.GetConnection(id)
 	if connection == nil {

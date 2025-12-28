@@ -15,6 +15,7 @@ var (
 	CARD_PIECE_ATK_INCREASE_ACTION logic.EffectActionTag = "cardaction.piece.atk_increase"
 	CARD_PIECE_ATK_DECREASE_ACTION logic.EffectActionTag = "cardaction.piece.atk_decrease"
 	CARD_PIECE_ATK_FIX_ACTION      logic.EffectActionTag = "cardaction.piece.atk_fix"
+	CARD_PIECE_SUMMON_ACTION       logic.EffectActionTag = "cardaction.piece.summon"
 	ENTITY_SUMMON_ACTION           logic.EffectActionTag = "pieceaction.piece.summon"
 	ENTITY_MOVE_ACTION             logic.EffectActionTag = "pieceaction.piece.move"
 	ENTITY_ATTACK_ACTION           logic.EffectActionTag = "pieceaction.piece.attack"

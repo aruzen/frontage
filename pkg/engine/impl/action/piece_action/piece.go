@@ -333,9 +333,6 @@ func (e PieceAttackAction) Solve(board *model.Board, state logic.ActionState, co
 	if !ok {
 		return board, nil
 	}
-	if s.decreaseHPState == nil {
-		return board, nil
-	}
 	if board == nil {
 		return nil, nil
 	}
@@ -348,6 +345,10 @@ func (e PieceAttackAction) Solve(board *model.Board, state logic.ActionState, co
 		return board, nil
 	}
 	board = board.Next()
+	if s.decreaseHPState == nil {
+		s.decreaseHPState = &PieceOperateActionState{}
+	}
+	s.decreaseHPState.pieceID = target.Id()
 	s.decreaseHPState.piece = target.Copy()
 	s.decreaseHPState.value = c.Value
 	if mp, ok := s.piece.(model.MutablePiece); ok {
@@ -361,6 +362,9 @@ func (e PieceAttackAction) SubEffects(state logic.ActionState) []*logic.EffectEv
 	s, ok := state.(*PieceAttackActionState)
 	if !ok {
 		return nil
+	}
+	if s.decreaseHPState == nil {
+		s.decreaseHPState = &PieceOperateActionState{}
 	}
 	effect := action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION)
 	if effect == nil {
@@ -383,9 +387,6 @@ func (e PieceInvasionAction) Solve(board *model.Board, state logic.ActionState, 
 	if !ok {
 		return board, nil
 	}
-	if s.decreaseHPState == nil {
-		return board, nil
-	}
 	if board == nil {
 		return nil, nil
 	}
@@ -398,6 +399,8 @@ func (e PieceInvasionAction) Solve(board *model.Board, state logic.ActionState, 
 		return board, nil
 	}
 	board = board.Next()
+
+	s.decreaseHPState.pieceID = target.Id()
 	s.decreaseHPState.piece = target.Copy()
 	s.decreaseHPState.value = c.Value
 	if mp, ok := s.piece.(model.MutablePiece); ok {
@@ -411,6 +414,9 @@ func (e PieceInvasionAction) SubEffects(state logic.ActionState) []*logic.Effect
 	s, ok := state.(*PieceAttackActionState)
 	if !ok {
 		return nil
+	}
+	if s.decreaseHPState == nil {
+		s.decreaseHPState = &PieceOperateActionState{}
 	}
 	entityDecrease := action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION)
 	if entityDecrease == nil {

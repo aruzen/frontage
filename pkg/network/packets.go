@@ -2,6 +2,8 @@ package network
 
 type PacketTag uint16
 
+// PacketTag の上位 2bit をカテゴリ判定に使う前提。
+// 新しいタグ追加時は <<14 を維持すること。
 type Packet interface {
 	PacketTag() PacketTag
 }

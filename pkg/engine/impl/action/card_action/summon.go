@@ -104,6 +104,7 @@ func NewPieceSummonActionState(holder *model.LocalPlayer, deckType model.DeckTyp
 		holder:   holder,
 		cardID:   c.Id(),
 		piece:    c,
+		summonID: uuid.New(),
 		deckType: deckType,
 		point:    point,
 	}

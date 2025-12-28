@@ -12,15 +12,15 @@ import (
 )
 
 type MatchMakeService interface {
-	MatchMake(ctx context.Context, id uuid.UUID, matchType data.MatchType) error
+	MatchMake(ctx context.Context, id uuid.UUID, matchType ndata.MatchType) error
 }
 
 type MatchMakeHandler struct {
 	service   MatchMakeService
-	matchRepo repository.MatchRepository
+	matchRepo *repository.MatchRepository
 }
 
-func NewMatchMakeHandler(service MatchMakeService, matchRepo repository.MatchRepository) *MatchMakeHandler {
+func NewMatchMakeHandler(service MatchMakeService, matchRepo *repository.MatchRepository) *MatchMakeHandler {
 	return &MatchMakeHandler{service: service, matchRepo: matchRepo}
 }
 

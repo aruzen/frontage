@@ -7,6 +7,10 @@ import (
 	action_register "frontage/pkg/engine/impl/action/register"
 	"frontage/pkg/network"
 	"frontage/pkg/network/controller"
+	"frontage/pkg/network/controller/pve"
+	"frontage/pkg/network/controller/pvp"
+	"frontage/pkg/network/lobby_handler"
+	"frontage/pkg/network/lobby_service"
 	"frontage/pkg/network/repository"
 	"github.com/google/uuid"
 	"log/slog"
@@ -19,6 +23,9 @@ type entryAndExitInfo struct {
 	isEntry bool
 	channel chan network.UnsolvedPacket
 }
+
+var matchRepo = repository.NewMatchRepository()
+var cardRepo = repository.NewCardRepository()
 
 func main() {
 	action_register.Init()
@@ -98,6 +105,8 @@ func main() {
 }
 
 func systemLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
+	handlers := controller.SystemPacketHandlers{}
+
 	cases := make([]reflect.SelectCase, 2)
 	ids := make([]uuid.UUID, 2)
 	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
@@ -131,10 +140,16 @@ system_finish:
 				ids = append(ids, visit.id)
 			}
 		default:
-			packet := val.Interface().(network.Packet)
-			if packet == nil {
-				slog.Warn("Packet is nil", "id", ids[idx])
+			packet := val.Interface().(network.UnsolvedPacket)
+			id := ids[idx]
+			if id == uuid.Nil {
+				slog.Error("Invalid packet id", "id", id)
 				continue
+			}
+			err := controller.DispatchSystemPacket(handlers, packet.Tag, id, packet.Body)
+			if err != nil {
+				slog.Error("Failed to dispatch system packet", "err", err)
+				return
 			}
 		}
 		fmt.Println("index:", idx, "value:", val.Interface())
@@ -142,6 +157,19 @@ system_finish:
 }
 
 func lobbyLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
+	handlers := controller.LobbyPacketHandlers{
+		MatchMake: lobby_handler.NewMatchMakeHandler(
+			lobby_service.NewMatchMakeService(
+				matchRepo,
+				pvp.RequireRepositories{
+					cardRepo,
+				},
+				pve.RequireRepositories{
+					cardRepo,
+				}),
+			matchRepo),
+	}
+
 	cases := make([]reflect.SelectCase, 2)
 	ids := make([]uuid.UUID, 2)
 	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
@@ -175,10 +203,16 @@ system_finish:
 				ids = append(ids, visit.id)
 			}
 		default:
-			packet := val.Interface().(network.Packet)
-			if packet == nil {
-				slog.Warn("Packet is nil", "id", ids[idx])
+			packet := val.Interface().(network.UnsolvedPacket)
+			id := ids[idx]
+			if id == uuid.Nil {
+				slog.Error("Invalid packet id", "id", id)
 				continue
+			}
+			err := controller.DispatchLobbyPacket(handlers, packet.Tag, id, packet.Body)
+			if err != nil {
+				slog.Error("Failed to dispatch system packet", "err", err)
+				return
 			}
 		}
 		fmt.Println("index:", idx, "value:", val.Interface())

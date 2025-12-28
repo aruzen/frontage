@@ -23,38 +23,32 @@ func DefaultGameInfo() GameInfo {
 }
 
 type RequireRepositories struct {
-	cardRepo *repository.CardRepository
+	CardRepo *repository.CardRepository
 }
 
-func Game(requireRepos RequireRepositories, id uuid.UUID, info GameInfo) {
-	_ = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
-		return nil
-	}, func(tag logic.EffectActionTag) logic.EffectAction {
-		return action.FindActionEffect(tag)
-	})
-
-	requireRepos.cardRepo.Insert(card.NewBasePiece(model.NewBaseCard("少年グルーシャ", model.Materials{
+func DemoDecks(requireRepos *RequireRepositories) (model.Cards, model.Cards, model.Cards, model.Cards) {
+	requireRepos.CardRepo.Insert(card.NewBasePiece(model.NewBaseCard("少年グルーシャ", model.Materials{
 		model.NATURO: 1,
 	}),
 		2, 2, 1,
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}},
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}))
 
-	requireRepos.cardRepo.Insert(card.NewBasePiece(model.NewBaseCard("爛漫に咲く花・姫百子", model.Materials{
+	requireRepos.CardRepo.Insert(card.NewBasePiece(model.NewBaseCard("爛漫に咲く花・姫百子", model.Materials{
 		model.NATURO: 4,
 	}),
 		6, 4, 2,
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {-1, -1}, {1, -1}},
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {-1, -1}, {1, -1}}))
 
-	requireRepos.cardRepo.Insert(card.NewBasePiece(model.NewBaseCard("生まれたばかりの灯・ベビードレイク", model.Materials{
+	requireRepos.CardRepo.Insert(card.NewBasePiece(model.NewBaseCard("生まれたばかりの灯・ベビードレイク", model.Materials{
 		model.PYRO: 1,
 	}),
 		1, 0, 2,
 		[]pkg.Point{{1, 0}, {-1, 0}, {-2, 0}},
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}))
 
-	requireRepos.cardRepo.Insert(card.NewBasePiece(model.NewBaseCard("旗将炎猿・ドモルドス", model.Materials{
+	requireRepos.CardRepo.Insert(card.NewBasePiece(model.NewBaseCard("旗将炎猿・ドモルドス", model.Materials{
 		model.PYRO: 4,
 	}),
 		6, 4, 2,
@@ -67,7 +61,7 @@ func Game(requireRepos RequireRepositories, id uuid.UUID, info GameInfo) {
 		"少年グルーシャ":    4,
 		"爛漫に咲く花・姫百子": 4,
 	} {
-		find, err := requireRepos.cardRepo.Find(k)
+		find, err := requireRepos.CardRepo.Find(k)
 		if err != nil {
 			continue
 		}
@@ -83,7 +77,7 @@ func Game(requireRepos RequireRepositories, id uuid.UUID, info GameInfo) {
 		"生まれたばかりの灯・ベビードレイク": 4,
 		"旗将炎猿・ドモルドス":        4,
 	} {
-		find, err := requireRepos.cardRepo.Find(k)
+		find, err := requireRepos.CardRepo.Find(k)
 		if err != nil {
 			continue
 		}
@@ -92,10 +86,22 @@ func Game(requireRepos RequireRepositories, id uuid.UUID, info GameInfo) {
 			subPyroDeck = append(subPyroDeck, find.CardCopy())
 		}
 	}
+	return mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck
+}
+
+func Game(requireRepos RequireRepositories, id uuid.UUID, info GameInfo) {
+	_ = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
+		return nil
+	}, func(tag logic.EffectActionTag) logic.EffectAction {
+		return action.FindActionEffect(tag)
+	})
+	npcID := uuid.New()
+
+	mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck := DemoDecks(&requireRepos)
 
 	players := [2]model.Player{
-		model.NewLocalPlayer(playersData[0].Id, mainNaturoDeck, subNaturoDeck),
-		model.NewLocalPlayer(playersData[1].Id, mainPyroDeck, subPyroDeck),
+		model.NewLocalPlayer(id, mainNaturoDeck, subNaturoDeck),
+		model.NewLocalPlayer(npcID, mainPyroDeck, subPyroDeck),
 	}
 
 	board := model.NewBoard(model.NewBoardInfo(pkg.Size{7, 7}, model.GENERATION_STRATEGY_SWAP), players)

@@ -26,7 +26,7 @@ type RequireRepositories struct {
 	CardRepo *repository.CardRepository
 }
 
-func Game(requireRepos RequireRepositories, ids [2]uuid.UUID, info GameInfo) {
+func Game(ctx context.Context, requireRepos RequireRepositories, ids [2]uuid.UUID, info GameInfo) {
 	_ = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
 		return nil
 	}, func(tag logic.EffectActionTag) logic.EffectAction {
@@ -105,14 +105,19 @@ func Game(requireRepos RequireRepositories, ids [2]uuid.UUID, info GameInfo) {
 	}
 	es.Emit(logic.NewEffectEvent(logic.GAME_START_ACTION, logic.GAME_START_ACTION.MakeState()))
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	gameCtx := ctx
+	if gameCtx == nil {
+		gameCtx = context.Background()
+	}
+	gameCtx, cancel := context.WithCancel(gameCtx)
+	defer cancel()
 
 	for {
-
+		select {
+		case <-gameCtx.Done():
+			return
+		}
 	}
-
-	cancel()
 }
 
 func listenPlayerInput() {

@@ -29,6 +29,10 @@ var (
 	ENTITY_ATK_INCREASE_ACTION     logic.EffectActionTag = "pieceaction.piece.atk_increase"
 	ENTITY_ATK_DECREASE_ACTION     logic.EffectActionTag = "pieceaction.piece.atk_decrease"
 	ENTITY_ATK_FIX_ACTION          logic.EffectActionTag = "pieceaction.piece.atk_fix"
+	PIECE_DEATH_ACTION             logic.EffectActionTag = "pieceaction.piece.death"
+	PIECE_DEATH_BY_BURN_ACTION     logic.EffectActionTag = "pieceaction.piece.death_by_burn"
+	PIECE_DEATH_BY_ATTACK_ACTION   logic.EffectActionTag = "pieceaction.piece.death_by_attack"
+	PIECE_DEATH_BY_INVASION_ACTION logic.EffectActionTag = "pieceaction.piece.death_by_invasion"
 )
 
 var (

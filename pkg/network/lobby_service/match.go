@@ -29,7 +29,7 @@ func (m MatchMakeService) MatchMake(ctx context.Context, id uuid.UUID, matchType
 		if m.matchRepo != nil {
 			m.matchRepo.Insert(matchID, id, uuid.Nil)
 		}
-		go pve.Game(m.pveRepos, id, pve.DefaultGameInfo())
+		go pve.Game(ctx, m.pveRepos, id, pve.DefaultGameInfo())
 		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: matchID})
 		return nil
 	case data.PvP:

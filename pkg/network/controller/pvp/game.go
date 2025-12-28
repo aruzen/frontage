@@ -4,6 +4,7 @@ import (
 	"context"
 	"frontage/pkg"
 	"frontage/pkg/engine/impl/action"
+	action_register "frontage/pkg/engine/impl/action/register"
 	"frontage/pkg/engine/impl/card"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
@@ -27,8 +28,9 @@ type RequireContents struct {
 }
 
 func Game(ctx context.Context, requireRepos RequireContents, ids [2]uuid.UUID, info GameInfo) {
+	action_register.Init()
 	_ = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
-		return nil
+		return action.FindActionModify(tag)
 	}, func(tag logic.EffectActionTag) logic.EffectAction {
 		return action.FindActionEffect(tag)
 	})

@@ -28,7 +28,7 @@ func (MoveBlocker) PreListen(es *logic.EventSystem, act logic.Action, state logi
 	if to.X < 0 || to.X >= size.Width || to.Y < 0 || to.Y >= size.Height {
 		return
 	}
-	if es.Board.Entities()[to.X][to.Y] == nil {
+	if es.Board.Entities()[to.X][to.Y] == nil && es.Board.Structures()[to.X][to.Y] == nil {
 		return
 	}
 	cancel := common.CancelModifyAction{}

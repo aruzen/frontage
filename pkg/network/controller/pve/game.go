@@ -4,6 +4,7 @@ import (
 	"context"
 	"frontage/pkg"
 	"frontage/pkg/engine/impl/action"
+	action_register "frontage/pkg/engine/impl/action/register"
 	"frontage/pkg/engine/impl/card"
 	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
@@ -38,6 +39,11 @@ func Game(ctx context.Context, rc RequireContents, id uuid.UUID, info GameInfo) 
 
 	var packet network.Packet
 	input := repository.GetGameChannel(id)
+	if input == nil || input.Chan == nil {
+		input = repository.AddGameChannel(id, make(chan network.UnsolvedPacket))
+	}
+	input.Living.Store(true)
+	defer input.Living.Store(false)
 	npcID := uuid.New()
 
 	mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck := DemoDecks(&rc)
@@ -78,8 +84,9 @@ func Game(ctx context.Context, rc RequireContents, id uuid.UUID, info GameInfo) 
 // ============================
 
 func InitRequireRepositories(requireRepos *RequireContents) {
+	action_register.Init()
 	requireRepos.ActionRepo = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
-		return nil
+		return action.FindActionModify(tag)
 	}, func(tag logic.EffectActionTag) logic.EffectAction {
 		return action.FindActionEffect(tag)
 	})

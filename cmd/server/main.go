@@ -37,7 +37,7 @@ var (
 func main() {
 	action_register.Init()
 	actionRepo = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
-		return nil
+		return action.FindActionModify(tag)
 	}, func(tag logic.EffectActionTag) logic.EffectAction {
 		return action.FindActionEffect(tag)
 	})

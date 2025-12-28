@@ -78,7 +78,7 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Uns
 				copied,
 			}
 		case network.GamePacketFlag:
-			if gameChan.Living.Load() {
+			if gameChan != nil && gameChan.Chan != nil && gameChan.Living.Load() {
 				gameChan.Chan <- network.UnsolvedPacket{
 					network.PacketTag(packetTag),
 					copied,

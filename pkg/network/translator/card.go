@@ -13,6 +13,12 @@ type CardTranslator struct {
 }
 
 func (cr *CardTranslator) ToPieceModel(d data.PieceCard) (card.MutablePiece, error) {
+	if cr == nil || cr.cardRepo == nil {
+		return nil, ErrNilCardRepository
+	}
+	if cr.materialsTran == nil {
+		return nil, ErrNilMaterialsTranslator
+	}
 	m, err := cr.cardRepo.Find(pkg.LocalizeTag(d.Tag))
 	if err != nil {
 		return nil, err
@@ -35,6 +41,9 @@ func (cr *CardTranslator) ToPieceModel(d data.PieceCard) (card.MutablePiece, err
 }
 
 func (cr *CardTranslator) FromPieceModel(m card.Piece) (data.PieceCard, error) {
+	if cr == nil || cr.materialsTran == nil {
+		return data.PieceCard{}, ErrNilMaterialsTranslator
+	}
 	material, err := cr.materialsTran.FromModel(m.PlayCost())
 	if err != nil {
 		return data.PieceCard{}, err

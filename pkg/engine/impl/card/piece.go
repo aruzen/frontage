@@ -75,10 +75,14 @@ func (p *BasePiece) AttackRanges() []pkg.Point {
 }
 
 func (p *BasePiece) Copy() MutablePiece {
+	legalMoves := make([]pkg.Point, len(p.legalMoves))
+	copy(legalMoves, p.legalMoves)
+	attackRanges := make([]pkg.Point, len(p.attackRanges))
+	copy(attackRanges, p.attackRanges)
 	return &BasePiece{
 		BaseCard:     *p.BaseCard.CardCopy().(*model.BaseCard),
-		legalMoves:   p.legalMoves,
-		attackRanges: p.attackRanges,
+		legalMoves:   legalMoves,
+		attackRanges: attackRanges,
 		hp:           p.hp,
 		mp:           p.mp,
 		atk:          p.atk,
@@ -86,10 +90,14 @@ func (p *BasePiece) Copy() MutablePiece {
 }
 
 func (p *BasePiece) Mirror(uuid uuid.UUID) MutablePiece {
+	legalMoves := make([]pkg.Point, len(p.legalMoves))
+	copy(legalMoves, p.legalMoves)
+	attackRanges := make([]pkg.Point, len(p.attackRanges))
+	copy(attackRanges, p.attackRanges)
 	return &BasePiece{
 		BaseCard:     *p.BaseCard.CardMirror(uuid).(*model.BaseCard),
-		legalMoves:   p.legalMoves,
-		attackRanges: p.attackRanges,
+		legalMoves:   legalMoves,
+		attackRanges: attackRanges,
 		hp:           p.hp,
 		mp:           p.mp,
 		atk:          p.atk,

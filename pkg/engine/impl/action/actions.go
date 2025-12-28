@@ -49,6 +49,7 @@ var (
 )
 
 var effectActionTable map[logic.EffectActionTag]logic.EffectAction
+var modifyActionTable map[logic.ModifyActionTag]logic.ModifyAction
 
 func Register(tag logic.EffectActionTag, action logic.EffectAction) error {
 	if effectActionTable == nil {
@@ -61,6 +62,21 @@ func Register(tag logic.EffectActionTag, action logic.EffectAction) error {
 	return nil
 }
 
+func RegisterModify(tag logic.ModifyActionTag, action logic.ModifyAction) error {
+	if modifyActionTable == nil {
+		modifyActionTable = make(map[logic.ModifyActionTag]logic.ModifyAction)
+	}
+	if _, ok := modifyActionTable[tag]; ok {
+		return fmt.Errorf("modify action tag %s is already registered", tag)
+	}
+	modifyActionTable[tag] = action
+	return nil
+}
+
 func FindActionEffect(tag logic.EffectActionTag) logic.EffectAction {
 	return effectActionTable[tag]
+}
+
+func FindActionModify(tag logic.ModifyActionTag) logic.ModifyAction {
+	return modifyActionTable[tag]
 }

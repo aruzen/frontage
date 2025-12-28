@@ -288,13 +288,13 @@ func (e PieceSummonAction) Act(state logic.ActionState, beforeAction logic.Effec
 func (e PieceSummonAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	_, c, ok := e.CastStateContext(state, context)
 	if !ok {
-		return nil, nil
+		return board, nil
 	}
-	board = board.Next()
-	if !board.SetPiece(c.Point, c.Piece) {
-		return nil, nil
+	next := board.Next()
+	if !next.SetPiece(c.Point, c.Piece) {
+		return board, nil
 	}
-	return board, logic.Summary{"placed_at": pkg.PointToMap(c.Point)}
+	return next, logic.Summary{"placed_at": pkg.PointToMap(c.Point)}
 }
 
 func (e PieceMoveAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
@@ -307,18 +307,18 @@ func (e PieceMoveAction) Act(state logic.ActionState, beforeAction logic.EffectA
 func (e PieceMoveAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	s, c, ok := e.CastStateContext(state, context)
 	if !ok {
-		return nil, nil
+		return board, nil
 	}
-	board = board.Next()
+	next := board.Next()
 
-	if !board.SetPiece(c.Point, s.piece) {
-		return nil, nil
+	if !next.SetPiece(c.Point, s.piece) {
+		return board, nil
 	}
 	if mp, ok := s.piece.(model.MutablePiece); ok {
 		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
-		_ = board.UpdatePiece(mp)
+		_ = next.UpdatePiece(mp)
 	}
-	return board, logic.Summary{"to": pkg.PointToMap(c.Point)}
+	return next, logic.Summary{"to": pkg.PointToMap(c.Point)}
 }
 
 func (e PieceAttackAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {

@@ -1,0 +1,23 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+*.coverprofile
+*.cover
+
+# Go build cache
+.gocache/
+
+# IDE
+.idea/
+
+# Documents / local notes
+/document/
+
+# Scripts (local)
+/scripts/

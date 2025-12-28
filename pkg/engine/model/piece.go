@@ -47,13 +47,15 @@ type BasePiece struct {
 	skills       []Skill
 	legalMoves   []pkg.Point
 	attackRanges []pkg.Point
+	actedCount   int
+	maxActions   int
 }
 
 var _ MutablePiece = (*BasePiece)(nil)
 
-func NewBasePiece(owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BasePiece {
+func NewBasePiece(id uuid.UUID, owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BasePiece {
 	piece := &BasePiece{
-		id:           uuid.New(),
+		id:           id,
 		owner:        owner,
 		position:     pos,
 		hp:           hp,
@@ -61,6 +63,7 @@ func NewBasePiece(owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, atta
 		atk:          atk,
 		legalMoves:   append([]pkg.Point(nil), legalMoves...),
 		attackRanges: append([]pkg.Point(nil), attackRanges...),
+		maxActions:   1,
 	}
 	if len(skills) > 0 {
 		piece.skills = append([]Skill(nil), skills...)
@@ -130,6 +133,8 @@ func (e *BasePiece) Copy() MutablePiece {
 		legalMoves:   append([]pkg.Point(nil), e.legalMoves...),
 		attackRanges: append([]pkg.Point(nil), e.attackRanges...),
 		skills:       copySkills,
+		actedCount:   e.actedCount,
+		maxActions:   e.maxActions,
 	}
 }
 
@@ -178,4 +183,29 @@ func (e *BasePiece) SetATK(v int) {
 
 func (e *BasePiece) SetPosition(pos pkg.Point) {
 	e.position = pos
+}
+
+func (e *BasePiece) ActionsUsedThisTurn() int {
+	return e.actedCount
+}
+
+func (e *BasePiece) MaxActionsPerTurn() int {
+	return e.maxActions
+}
+
+func (e *BasePiece) SetActionsUsedThisTurn(v int) {
+	e.actedCount = v
+	if e.actedCount < 0 {
+		e.actedCount = 0
+	}
+}
+
+func (e *BasePiece) SetMaxActionsPerTurn(v int) {
+	if v < 0 {
+		v = 0
+	}
+	e.maxActions = v
+	if e.actedCount > e.maxActions {
+		e.actedCount = e.maxActions
+	}
 }

@@ -104,7 +104,7 @@ func TestBoardSetAndGetPiece(t *testing.T) {
 	board := newTestBoard()
 	owner := board.Players()[0]
 	pos := pkg.Point{X: 2, Y: 0}
-	piece := NewBasePiece(owner, pkg.Point{X: 0, Y: 0}, 10, 5, 3, nil, nil)
+	piece := NewBasePiece(uuid.New(), owner, pkg.Point{X: 0, Y: 0}, 10, 5, 3, nil, nil)
 
 	if !board.SetPiece(pos, piece) {
 		t.Fatalf("SetPiece(%v) returned false", pos)
@@ -132,7 +132,7 @@ func TestBoardSetPieceMovesExistingID(t *testing.T) {
 	owner := board.Players()[0]
 	from := pkg.Point{X: 0, Y: 1}
 	to := pkg.Point{X: 1, Y: 1}
-	piece := NewBasePiece(owner, from, 8, 4, 2, nil, nil)
+	piece := NewBasePiece(uuid.New(), owner, from, 8, 4, 2, nil, nil)
 
 	if !board.SetPiece(from, piece) {
 		t.Fatalf("SetPiece(%v) failed", from)
@@ -160,7 +160,7 @@ func TestBoardUpdatePiece(t *testing.T) {
 	board := newTestBoard()
 	owner := board.Players()[0]
 	pos := pkg.Point{X: 1, Y: 2}
-	piece := NewBasePiece(owner, pos, 12, 6, 4, nil, nil)
+	piece := NewBasePiece(uuid.New(), owner, pos, 12, 6, 4, nil, nil)
 	if !board.SetPiece(pos, piece) {
 		t.Fatalf("SetPiece(%v) failed", pos)
 	}
@@ -180,7 +180,7 @@ func TestBoardUpdatePiece(t *testing.T) {
 		t.Fatalf("piece not updated in board")
 	}
 
-	missing := NewBasePiece(owner, pkg.Point{X: 0, Y: 0}, 5, 3, 1, nil, nil)
+	missing := NewBasePiece(uuid.New(), owner, pkg.Point{X: 0, Y: 0}, 5, 3, 1, nil, nil)
 	if board.UpdatePiece(missing) {
 		t.Fatalf("UpdatePiece should fail for unknown piece")
 	}

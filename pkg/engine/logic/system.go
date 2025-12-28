@@ -49,19 +49,19 @@ func (es *EventSystem) transmission(listenHelper func(es *EventSystem, maybe int
 		searchEnd = pkg.SizeToPoint(es.Board.Size())
 		delta = pkg.Point{1, 1}
 	} else {
-		searchStart = pkg.SizeToPoint(es.Board.Size())
-		searchEnd = pkg.Point{0, 0}
+		searchStart = pkg.Point{es.Board.Size().Width - 1, es.Board.Size().Height - 1}
+		searchEnd = pkg.Point{-1, -1}
 		delta = pkg.Point{-1, -1}
 	}
 
-	for x := searchStart.X; x != searchEnd.X+delta.X; x += delta.X {
-		for y := searchStart.Y; y != searchEnd.Y+delta.Y; y += delta.Y {
+	for y := searchStart.Y; y != searchEnd.Y; y += delta.Y {
+		for x := searchStart.X; x != searchEnd.X; x += delta.X {
 			listenHelper(es, es.Board.Entities()[x][y], event.Action(), event.State())
 		}
 	}
 
-	for x := searchStart.X; x != searchEnd.X+delta.X; x += delta.X {
-		for y := searchStart.Y; y != searchEnd.Y+delta.Y; y += delta.Y {
+	for y := searchStart.Y; y != searchEnd.Y; y += delta.Y {
+		for x := searchStart.X; x != searchEnd.X; x += delta.X {
 			listenHelper(es, es.Board.Structures()[x][y], event.Action(), event.State())
 		}
 	}

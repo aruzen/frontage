@@ -52,56 +52,57 @@ func main() {
 		if err != nil {
 			return
 		}
-		go func() {
-			defer func(conn net.Conn) {
-				err := conn.Close()
-				if err != nil {
-					slog.Error("Failed to close TCP connection", "err", err)
-				}
-			}(conn)
-			id, err := uuid.NewUUID()
-			if err != nil {
-				slog.Error("Failed to generate UUID", "err", err)
-			}
-			repository.AddConnection(id, conn)
-			defer repository.RemoveConnection(id)
-
-			systemChan := make(chan network.UnsolvedPacket)
-			lobbyChan := make(chan network.UnsolvedPacket)
-			gameChan := make(chan network.UnsolvedPacket)
-			systemVisitPlayer <- entryAndExitInfo{
-				id:      id,
-				isEntry: true,
-				channel: systemChan,
-			}
-			lobbyVisitPlayer <- entryAndExitInfo{
-				id:      id,
-				isEntry: true,
-				channel: lobbyChan,
-			}
-			barrierGameChan := repository.AddGameChannel(id, gameChan)
-			defer func() {
-				systemVisitPlayer <- entryAndExitInfo{
-					id:      id,
-					isEntry: false,
-					channel: nil,
-				}
-				lobbyVisitPlayer <- entryAndExitInfo{
-					id:      id,
-					isEntry: false,
-					channel: nil,
-				}
-				repository.RemoveGameChannel(id)
-			}()
-			err = controller.ReceiveLoop(systemCtx, conn, systemChan, lobbyChan, barrierGameChan)
-			if err != nil {
-				slog.Error("Failed to receive loop packet", "err", err)
-				return
-			}
-
-		}()
+		go receive(systemCtx, conn, systemVisitPlayer, lobbyVisitPlayer)
 	}
 	systemFinish()
+}
+
+func receive(ctx context.Context, conn net.Conn, systemVisitPlayer, lobbyVisitPlayer chan entryAndExitInfo) {
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+			slog.Error("Failed to close TCP connection", "err", err)
+		}
+	}(conn)
+	id, err := uuid.NewUUID()
+	if err != nil {
+		slog.Error("Failed to generate UUID", "err", err)
+	}
+	repository.AddConnection(id, conn)
+	defer repository.RemoveConnection(id)
+
+	systemChan := make(chan network.UnsolvedPacket)
+	lobbyChan := make(chan network.UnsolvedPacket)
+	gameChan := make(chan network.UnsolvedPacket)
+	systemVisitPlayer <- entryAndExitInfo{
+		id:      id,
+		isEntry: true,
+		channel: systemChan,
+	}
+	lobbyVisitPlayer <- entryAndExitInfo{
+		id:      id,
+		isEntry: true,
+		channel: lobbyChan,
+	}
+	barrierGameChan := repository.AddGameChannel(id, gameChan)
+	defer func() {
+		systemVisitPlayer <- entryAndExitInfo{
+			id:      id,
+			isEntry: false,
+			channel: nil,
+		}
+		lobbyVisitPlayer <- entryAndExitInfo{
+			id:      id,
+			isEntry: false,
+			channel: nil,
+		}
+		repository.RemoveGameChannel(id)
+	}()
+	err = controller.ReceiveLoop(ctx, conn, systemChan, lobbyChan, barrierGameChan)
+	if err != nil {
+		slog.Error("Failed to receive loop packet", "err", err)
+		return
+	}
 }
 
 func systemLoop(ctx context.Context, visitChan chan entryAndExitInfo) {

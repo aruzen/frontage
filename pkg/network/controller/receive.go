@@ -64,22 +64,24 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Uns
 			loaded += read
 		}
 		category := packetTag >> 14
+		copied := make([]byte, packetLength)
+		copy(copied, body)
 		switch network.PacketTag(category) {
 		case network.SystemPacketFlag:
 			systemChan <- network.UnsolvedPacket{
 				network.PacketTag(packetTag),
-				body,
+				copied,
 			}
 		case network.LobbyPacketFlag:
 			lobbyChan <- network.UnsolvedPacket{
 				network.PacketTag(packetTag),
-				body,
+				copied,
 			}
 		case network.GamePacketFlag:
 			if gameChan.Living.Load() {
 				gameChan.Chan <- network.UnsolvedPacket{
 					network.PacketTag(packetTag),
-					body,
+					copied,
 				}
 			}
 		}

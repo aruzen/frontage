@@ -32,7 +32,7 @@ var (
 )
 
 var (
-	MOVE_CANCEL_MODIFY_ACTION logic.ModifyActionTag = "pieceaction.move.cancel"
+	CANCEL_MODIFY_ACTION logic.ModifyActionTag = "system.cancel"
 )
 
 var (

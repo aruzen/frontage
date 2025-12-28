@@ -2,6 +2,7 @@ package system
 
 import (
 	"frontage/pkg/engine/impl/action"
+	"frontage/pkg/engine/impl/action/common"
 	"frontage/pkg/engine/impl/action/piece_action"
 	"frontage/pkg/engine/logic"
 )
@@ -26,6 +27,6 @@ func (MoveBlocker) PreListen(es *logic.EventSystem, act logic.Action, state inte
 	if es.Board.Entities()[to.X][to.Y] == nil {
 		return
 	}
-	cancel := piece_action.MoveCancelModifyAction{}
-	es.Chain(logic.NewModifyEvent(cancel, piece_action.MoveCancelState{Reason: "destination occupied"}))
+	cancel := common.CancelModifyAction{}
+	es.Chain(logic.NewModifyEvent(cancel, common.CancelState{Reason: "destination occupied"}))
 }

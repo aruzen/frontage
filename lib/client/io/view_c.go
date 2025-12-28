@@ -29,6 +29,7 @@ typedef struct {
 	char* uuid;
 	int cost_count;
 	MaterialCostView* costs;
+
 	int atk;
 	int hp;
 	int mp;
@@ -36,6 +37,7 @@ typedef struct {
 
 typedef struct {
 	char* id;
+	char* tag;
 	int x;
 	int y;
 	int hp;
@@ -119,6 +121,7 @@ func FillPieceView(dst *C.PieceView, src model.Piece) C.int {
 		return -1
 	}
 	dst.id = C.CString(src.Id().String())
+	dst.tag = C.CString(string(src.LocalizeTag()))
 	dst.x = C.int(src.Position().X)
 	dst.y = C.int(src.Position().Y)
 	dst.hp = C.int(src.HP())

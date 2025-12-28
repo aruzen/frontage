@@ -2,6 +2,12 @@ package main
 
 /*
 #include <stdlib.h>
+
+typedef enum {
+	MATCH_TYPE_PVP = 0,
+	MATCH_TYPE_PVE
+} MatchType;
+
 */
 import "C"
 

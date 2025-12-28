@@ -17,6 +17,7 @@ type Point struct {
 	Y int `json:"y"`
 }
 
+// LocalizeTag 責務がローカライズ用からResourceIDとしての役割に変化してしまっている
 type LocalizeTag string
 
 type Localized interface {

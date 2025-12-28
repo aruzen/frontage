@@ -6,6 +6,7 @@ import (
 )
 
 type Piece interface {
+	pkg.Localized
 	Id() uuid.UUID
 	Position() pkg.Point
 	HP() int
@@ -42,6 +43,7 @@ type MutablePiece interface {
 
 type BasePiece struct {
 	id       uuid.UUID
+	tag      pkg.LocalizeTag
 	position pkg.Point
 	hp       int
 	mp       int
@@ -66,6 +68,7 @@ func NewBasePiece(id uuid.UUID, owner Player, pos pkg.Point, hp, mp, atk int, le
 		hp:            hp,
 		mp:            mp,
 		atk:           atk,
+		tag:           "",
 		legalMoves:    append([]pkg.Point(nil), legalMoves...),
 		attackRanges:  append([]pkg.Point(nil), attackRanges...),
 		maxActionCost: 1,
@@ -98,6 +101,10 @@ func (e *BasePiece) ATK() int {
 
 func (e *BasePiece) Owner() Player {
 	return e.owner
+}
+
+func (e *BasePiece) LocalizeTag() pkg.LocalizeTag {
+	return e.tag
 }
 
 func (e *BasePiece) HaveSkill(s SkillTag) bool {
@@ -135,6 +142,7 @@ func (e *BasePiece) Copy() MutablePiece {
 		mp:             e.mp,
 		atk:            e.atk,
 		owner:          e.owner,
+		tag:            e.tag,
 		legalMoves:     append([]pkg.Point(nil), e.legalMoves...),
 		attackRanges:   append([]pkg.Point(nil), e.attackRanges...),
 		skills:         copySkills,
@@ -188,6 +196,10 @@ func (e *BasePiece) SetATK(v int) {
 
 func (e *BasePiece) SetPosition(pos pkg.Point) {
 	e.position = pos
+}
+
+func (e *BasePiece) SetLocalizeTag(tag pkg.LocalizeTag) {
+	e.tag = tag
 }
 
 func (e *BasePiece) UsedActionCost() int {

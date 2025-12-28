@@ -39,6 +39,10 @@ func Game(ctx context.Context, rc RequireContents, id uuid.UUID, info GameInfo) 
 
 	var packet network.Packet
 	input := repository.GetGameChannel(id)
+	if input == nil || input.Chan == nil {
+		slog.Error("game channel not found")
+		return
+	}
 	npcID := uuid.New()
 
 	mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck := DemoDecks(&rc)

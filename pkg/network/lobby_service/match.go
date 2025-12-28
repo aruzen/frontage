@@ -3,7 +3,6 @@ package lobby_service
 import (
 	"context"
 	"errors"
-	"frontage/pkg/network"
 	"frontage/pkg/network/controller/pve"
 	"frontage/pkg/network/controller/pvp"
 	"frontage/pkg/network/data"
@@ -30,7 +29,7 @@ func (m MatchMakeService) MatchMake(ctx context.Context, id uuid.UUID, matchType
 			m.matchRepo.Insert(matchID, id, uuid.Nil)
 		}
 		go pve.Game(ctx, m.pveRepos, id, pve.DefaultGameInfo())
-		network.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: matchID})
+		repository.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: matchID})
 		return nil
 	case data.PvP:
 		return errors.New("pvp match not implemented")

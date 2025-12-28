@@ -370,3 +370,64 @@ func (e PieceAttackAction) SubEffects(state interface{}) []*logic.EffectEvent {
 		logic.NewEffectEvent(effect, s.decreaseHPState),
 	}
 }
+
+func (e PieceInvasionAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
+	if s, ok := state.(PieceAttackActionState); ok {
+		return &PieceAttackActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.point, Value: s.value, ActionCost: s.actionCost}, logic.Summary{"target": pkg.PointToMap(s.point)}
+	}
+	return nil, nil
+}
+
+func (e PieceInvasionAction) Solve(board *model.Board, state interface{}, context logic.EffectContext) (*model.Board, logic.Summary) {
+	s, c, ok := e.CastStateContext(state, context)
+	if !ok {
+		return board, nil
+	}
+	if s.decreaseHPState == nil {
+		return board, nil
+	}
+	if board == nil {
+		return nil, nil
+	}
+	size := board.Size()
+	if c.Point.X < 0 || c.Point.X >= size.Width || c.Point.Y < 0 || c.Point.Y >= size.Height {
+		return board, nil
+	}
+	target := board.Entities()[c.Point.X][c.Point.Y]
+	if target == nil {
+		return board, nil
+	}
+	board = board.Next()
+	s.decreaseHPState.piece = target.Copy()
+	s.decreaseHPState.value = c.Value
+	if mp, ok := s.piece.(model.MutablePiece); ok {
+		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
+		_ = board.UpdatePiece(mp)
+	}
+	return board, logic.Summary{"target": pkg.PointToMap(c.Point), "value": c.Value}
+}
+
+func (e PieceInvasionAction) SubEffects(state interface{}) []*logic.EffectEvent {
+	s, ok := state.(PieceAttackActionState)
+	if !ok {
+		return nil
+	}
+	entityDecrease := action.FindActionEffect(action.ENTITY_HP_DECREASE_ACTION)
+	if entityDecrease == nil {
+		return nil
+	}
+	entityMove := action.FindActionEffect(action.ENTITY_MOVE_ACTION)
+	if entityMove == nil {
+		return nil
+	}
+	return []*logic.EffectEvent{
+		logic.NewEffectEvent(entityDecrease, s.decreaseHPState),
+		logic.NewEffectEvent(entityMove, PieceMoveActionState{
+			pieceID:    s.pieceID,
+			from:       s.piece.Position(),
+			to:         s.point,
+			actionCost: 0,
+			piece:      s.piece,
+		}),
+	}
+}

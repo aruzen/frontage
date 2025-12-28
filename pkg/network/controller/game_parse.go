@@ -12,6 +12,7 @@ type GamePacketParsers struct {
 	GameInitialize *game_handler.GameInitializeHandler
 	OpponentInit   *game_handler.OpponentPlayerInitializeHandler
 	MyDeckUpload   *game_handler.MyDeckUploadHandler
+	TurnPass       *game_handler.TurnPassHandler
 }
 
 func ParseGamePacket(parsers GamePacketParsers, tag network.PacketTag, data []byte) (network.Packet, error) {
@@ -59,6 +60,15 @@ func ParseGamePacket(parsers GamePacketParsers, tag network.PacketTag, data []by
 			return nil, err
 		}
 		return packet, nil
+	case network.TURN_PASS_PACKET_TAG:
+		if parsers.TurnPass == nil {
+			return nil, ErrMissingHandler
+		}
+		turn, err := parsers.TurnPass.ServePacket(data)
+		if err != nil {
+			return nil, err
+		}
+		return game_api.TurnPassPacket{Turn: turn}, nil
 	default:
 		return nil, ErrUnsupportedPacketTag
 	}

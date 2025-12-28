@@ -19,6 +19,8 @@ type MyDeckUploadHandler struct {
 	cardRepo *repository.CardRepository
 }
 
+type TurnPassHandler struct{}
+
 func NewInitializeHandler() *GameInitializeHandler {
 	return &GameInitializeHandler{}
 }
@@ -78,4 +80,16 @@ func (h *MyDeckUploadHandler) ServePacket(data []byte) (model.Cards, model.Cards
 		return nil, nil, err
 	}
 	return mainDeck, subDeck, nil
+}
+
+func NewTurnPassHandler() *TurnPassHandler {
+	return &TurnPassHandler{}
+}
+
+func (h *TurnPassHandler) ServePacket(data []byte) (int, error) {
+	var packet game_api.TurnPassPacket
+	if err := json.Unmarshal(data, &packet); err != nil {
+		return 0, err
+	}
+	return packet.Turn, nil
 }

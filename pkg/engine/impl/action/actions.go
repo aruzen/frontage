@@ -32,6 +32,10 @@ var (
 )
 
 var (
+	MOVE_CANCEL_MODIFY_ACTION logic.ModifyActionTag = "pieceaction.move.cancel"
+)
+
+var (
 	GAME_START_ACTION  logic.EffectActionTag = logic.GAME_START_ACTION_TAG
 	GAME_FINISH_ACTION logic.EffectActionTag = logic.GAME_FINISH_ACTION_TAG
 	TURN_START_ACTION  logic.EffectActionTag = logic.TURN_START_ACTION_TAG

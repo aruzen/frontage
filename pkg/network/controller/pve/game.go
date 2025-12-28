@@ -63,6 +63,7 @@ func Game(ctx context.Context, rc RequireContents, id uuid.UUID, info GameInfo) 
 		slog.Error("")
 		return
 	}
+	repository.SendPacket(id, packet)
 
 	for {
 		select {

@@ -175,7 +175,7 @@ func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context 
 		return board, nil
 	}
 	piece := model.NewBasePiece(s.summonID, owner, c.Point, s.piece.HP(), s.piece.MP(), s.piece.ATK(), s.piece.LegalMoves(), s.piece.AttackRanges())
-	piece.SetActionsUsedThisTurn(piece.MaxActionsPerTurn())
+	piece.SetUsedActionCost(piece.MaxActionCost())
 	if !next.SetPiece(c.Point, piece) {
 		return board, nil
 	}

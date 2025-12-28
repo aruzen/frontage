@@ -11,6 +11,8 @@ type Piece interface {
 	HP() int
 	MP() int
 	ATK() int
+	UsedActionCost() int
+	MaxActionCost() int
 	Owner() Player
 
 	HaveSkill(s SkillTag) bool
@@ -31,6 +33,8 @@ type MutablePiece interface {
 	SetHP(int)
 	SetMP(int)
 	SetATK(int)
+	SetUsedActionCost(int)
+	SetMaxActionCost(int)
 
 	// SetPosition この関数ではボード側にも適用されないので、呼び出さないでください。`Board.SetPiece(Piece)`を使用してください。
 	SetPosition(pos pkg.Point)
@@ -44,26 +48,27 @@ type BasePiece struct {
 	atk      int
 	owner    Player
 
+	usedActionCost int
+	maxActionCost  int
+
 	skills       []Skill
 	legalMoves   []pkg.Point
 	attackRanges []pkg.Point
-	actedCount   int
-	maxActions   int
 }
 
 var _ MutablePiece = (*BasePiece)(nil)
 
 func NewBasePiece(id uuid.UUID, owner Player, pos pkg.Point, hp, mp, atk int, legalMoves, attackRanges []pkg.Point, skills ...Skill) *BasePiece {
 	piece := &BasePiece{
-		id:           id,
-		owner:        owner,
-		position:     pos,
-		hp:           hp,
-		mp:           mp,
-		atk:          atk,
-		legalMoves:   append([]pkg.Point(nil), legalMoves...),
-		attackRanges: append([]pkg.Point(nil), attackRanges...),
-		maxActions:   1,
+		id:            id,
+		owner:         owner,
+		position:      pos,
+		hp:            hp,
+		mp:            mp,
+		atk:           atk,
+		legalMoves:    append([]pkg.Point(nil), legalMoves...),
+		attackRanges:  append([]pkg.Point(nil), attackRanges...),
+		maxActionCost: 1,
 	}
 	if len(skills) > 0 {
 		piece.skills = append([]Skill(nil), skills...)
@@ -124,17 +129,17 @@ func (e *BasePiece) Copy() MutablePiece {
 	copySkills := make([]Skill, len(e.skills))
 	copy(copySkills, e.skills)
 	return &BasePiece{
-		id:           e.id,
-		position:     e.position,
-		hp:           e.hp,
-		mp:           e.mp,
-		atk:          e.atk,
-		owner:        e.owner,
-		legalMoves:   append([]pkg.Point(nil), e.legalMoves...),
-		attackRanges: append([]pkg.Point(nil), e.attackRanges...),
-		skills:       copySkills,
-		actedCount:   e.actedCount,
-		maxActions:   e.maxActions,
+		id:             e.id,
+		position:       e.position,
+		hp:             e.hp,
+		mp:             e.mp,
+		atk:            e.atk,
+		owner:          e.owner,
+		legalMoves:     append([]pkg.Point(nil), e.legalMoves...),
+		attackRanges:   append([]pkg.Point(nil), e.attackRanges...),
+		skills:         copySkills,
+		usedActionCost: e.usedActionCost,
+		maxActionCost:  e.maxActionCost,
 	}
 }
 
@@ -185,27 +190,27 @@ func (e *BasePiece) SetPosition(pos pkg.Point) {
 	e.position = pos
 }
 
-func (e *BasePiece) ActionsUsedThisTurn() int {
-	return e.actedCount
+func (e *BasePiece) UsedActionCost() int {
+	return e.usedActionCost
 }
 
-func (e *BasePiece) MaxActionsPerTurn() int {
-	return e.maxActions
+func (e *BasePiece) MaxActionCost() int {
+	return e.maxActionCost
 }
 
-func (e *BasePiece) SetActionsUsedThisTurn(v int) {
-	e.actedCount = v
-	if e.actedCount < 0 {
-		e.actedCount = 0
+func (e *BasePiece) SetUsedActionCost(v int) {
+	e.usedActionCost = v
+	if e.usedActionCost < 0 {
+		e.usedActionCost = 0
 	}
 }
 
-func (e *BasePiece) SetMaxActionsPerTurn(v int) {
+func (e *BasePiece) SetMaxActionCost(v int) {
 	if v < 0 {
 		v = 0
 	}
-	e.maxActions = v
-	if e.actedCount > e.maxActions {
-		e.actedCount = e.maxActions
+	e.maxActionCost = v
+	if e.usedActionCost > e.maxActionCost {
+		e.usedActionCost = e.maxActionCost
 	}
 }

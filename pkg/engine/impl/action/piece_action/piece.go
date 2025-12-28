@@ -20,26 +20,30 @@ func (s PieceSummonActionState) Point() pkg.Point   { return s.point }
 func (s PieceSummonActionState) Piece() model.Piece { return s.piece }
 
 type PieceMoveActionState struct {
-	pieceID uuid.UUID
-	from    pkg.Point
-	to      pkg.Point
-	piece   model.Piece
+	pieceID    uuid.UUID
+	from       pkg.Point
+	to         pkg.Point
+	actionCost int
+	piece      model.Piece
 }
 
 func (s PieceMoveActionState) From() pkg.Point    { return s.from }
 func (s PieceMoveActionState) To() pkg.Point      { return s.to }
 func (s PieceMoveActionState) Piece() model.Piece { return s.piece }
+func (s PieceMoveActionState) ActionCost() int    { return s.actionCost }
 
 type PieceAttackActionState struct {
 	pieceID         uuid.UUID
 	point           pkg.Point
 	value           int
+	actionCost      int
 	decreaseHPState *PieceOperateActionState
 	piece           model.Piece
 }
 
 func (s PieceAttackActionState) Point() pkg.Point                        { return s.point }
 func (s PieceAttackActionState) Value() int                              { return s.value }
+func (s PieceAttackActionState) ActionCost() int                         { return s.actionCost }
 func (s PieceAttackActionState) DecreaseState() *PieceOperateActionState { return s.decreaseHPState }
 func (s PieceAttackActionState) Piece() model.Piece                      { return s.piece }
 
@@ -51,13 +55,15 @@ type PieceSummonActionContext struct {
 
 type PieceMoveActionContext struct {
 	event.BaseEffectContext
-	Point pkg.Point
+	Point      pkg.Point
+	ActionCost int
 }
 
 type PieceAttackActionContext struct {
 	event.BaseEffectContext
-	Point pkg.Point
-	Value int
+	Point      pkg.Point
+	Value      int
+	ActionCost int
 }
 
 func (c PieceSummonActionContext) ToMap() map[string]interface{} {
@@ -84,6 +90,7 @@ func (c *PieceSummonActionContext) FromMap(m map[string]interface{}) error {
 func (c PieceMoveActionContext) ToMap() map[string]interface{} {
 	result := c.BaseEffectContext.ToMap()
 	result["point"] = pkg.PointToMap(c.Point)
+	result["action_cost"] = c.ActionCost
 	return result
 }
 
@@ -96,6 +103,10 @@ func (c *PieceMoveActionContext) FromMap(m map[string]interface{}) error {
 		return fmt.Errorf("point: %w", err)
 	}
 	c.Point = p
+	cost, err := pkg.ToInt(m["action_cost"])
+	if err == nil {
+		c.ActionCost = cost
+	}
 	return nil
 }
 
@@ -103,6 +114,7 @@ func (c PieceAttackActionContext) ToMap() map[string]interface{} {
 	result := c.BaseEffectContext.ToMap()
 	result["point"] = pkg.PointToMap(c.Point)
 	result["value"] = c.Value
+	result["action_cost"] = c.ActionCost
 	return result
 }
 
@@ -118,6 +130,9 @@ func (c *PieceAttackActionContext) FromMap(m map[string]interface{}) error {
 	c.Value, err = pkg.ToInt(m["value"])
 	if err != nil {
 		return fmt.Errorf("value: %w", err)
+	}
+	if cost, err := pkg.ToInt(m["action_cost"]); err == nil {
+		c.ActionCost = cost
 	}
 	return nil
 }
@@ -152,9 +167,10 @@ func (s *PieceSummonActionState) FromMap(b *model.Board, m map[string]interface{
 
 func (s PieceMoveActionState) ToMap() map[string]interface{} {
 	return map[string]interface{}{
-		"piece_id": s.pieceID.String(),
-		"from":     pkg.PointToMap(s.from),
-		"to":       pkg.PointToMap(s.to),
+		"piece_id":    s.pieceID.String(),
+		"from":        pkg.PointToMap(s.from),
+		"to":          pkg.PointToMap(s.to),
+		"action_cost": s.actionCost,
 	}
 }
 
@@ -174,6 +190,9 @@ func (s *PieceMoveActionState) FromMap(b *model.Board, m map[string]interface{})
 	}
 	s.from = from
 	s.to = to
+	if cost, err := pkg.ToInt(m["action_cost"]); err == nil {
+		s.actionCost = cost
+	}
 
 	if b != nil {
 		if piece, ok := b.GetPiece(id); ok {
@@ -185,9 +204,10 @@ func (s *PieceMoveActionState) FromMap(b *model.Board, m map[string]interface{})
 
 func (s PieceAttackActionState) ToMap() map[string]interface{} {
 	result := map[string]interface{}{
-		"piece_id": s.pieceID.String(),
-		"point":    pkg.PointToMap(s.point),
-		"value":    s.value,
+		"piece_id":    s.pieceID.String(),
+		"point":       pkg.PointToMap(s.point),
+		"value":       s.value,
+		"action_cost": s.actionCost,
 	}
 	/* これはSolve時にのみ必要なのでResultに関係ない
 	if s.decreaseHPState != nil {
@@ -213,6 +233,9 @@ func (s *PieceAttackActionState) FromMap(b *model.Board, m map[string]interface{
 		return fmt.Errorf("value: %w", err)
 	}
 	s.value = num
+	if cost, err := pkg.ToInt(m["action_cost"]); err == nil {
+		s.actionCost = cost
+	}
 	/* これはSolve時にのみ必要なのでResultに関係ない
 	if mm, ok := m["decrease_hp_state"].(map[string]interface{}); ok {
 		child := &PieceOperateActionState{}
@@ -276,7 +299,7 @@ func (e PieceSummonAction) Solve(board *model.Board, state interface{}, context 
 
 func (e PieceMoveAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceMoveActionState); ok {
-		return &PieceMoveActionContext{event.BaseEffectContext{}, s.to}, logic.Summary{"from": pkg.PointToMap(s.from), "to": pkg.PointToMap(s.to)}
+		return &PieceMoveActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.to, ActionCost: s.actionCost}, logic.Summary{"from": pkg.PointToMap(s.from), "to": pkg.PointToMap(s.to)}
 	}
 	return nil, nil
 }
@@ -291,12 +314,16 @@ func (e PieceMoveAction) Solve(board *model.Board, state interface{}, context lo
 	if !board.SetPiece(c.Point, s.piece) {
 		return nil, nil
 	}
+	if mp, ok := s.piece.(model.MutablePiece); ok {
+		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
+		_ = board.UpdatePiece(mp)
+	}
 	return board, logic.Summary{"to": pkg.PointToMap(c.Point)}
 }
 
 func (e PieceAttackAction) Act(state interface{}, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(PieceAttackActionState); ok {
-		return &PieceAttackActionContext{event.BaseEffectContext{}, s.point, s.value}, logic.Summary{"target": pkg.PointToMap(s.point)}
+		return &PieceAttackActionContext{BaseEffectContext: event.BaseEffectContext{}, Point: s.point, Value: s.value, ActionCost: s.actionCost}, logic.Summary{"target": pkg.PointToMap(s.point)}
 	}
 	return nil, nil
 }
@@ -323,6 +350,10 @@ func (e PieceAttackAction) Solve(board *model.Board, state interface{}, context 
 	board = board.Next()
 	s.decreaseHPState.piece = target.Copy()
 	s.decreaseHPState.value = c.Value
+	if mp, ok := s.piece.(model.MutablePiece); ok {
+		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
+		_ = board.UpdatePiece(mp)
+	}
 	return board, logic.Summary{"target": pkg.PointToMap(c.Point), "value": c.Value}
 }
 

@@ -34,17 +34,17 @@ func TestPieceActionContextsToMapFromMap(t *testing.T) {
 	// Move
 	{
 		base := event.NewBaseEffectContext()
-		ctx := piece_action.PieceMoveActionContext{BaseEffectContext: base, Point: pkg.Point{X: 3, Y: 4}}
+		ctx := piece_action.PieceMoveActionContext{BaseEffectContext: base, Point: pkg.Point{X: 3, Y: 4}, ActionCost: 2}
 		m := ctx.ToMap()
 		point := m["point"].(map[string]interface{})
-		if point["x"] != 3 || point["y"] != 4 {
+		if point["x"] != 3 || point["y"] != 4 || m["action_cost"] != 2 {
 			t.Fatalf("move point not serialized correctly: %v", point)
 		}
 		dst := &piece_action.PieceMoveActionContext{}
 		if err := dst.FromMap(m); err != nil {
 			t.Fatalf("move FromMap error: %v", err)
 		}
-		if dst.Point != (pkg.Point{3, 4}) {
+		if dst.Point != (pkg.Point{3, 4}) || dst.ActionCost != 2 {
 			t.Fatalf("move context not restored: %+v", dst)
 		}
 	}
@@ -53,17 +53,17 @@ func TestPieceActionContextsToMapFromMap(t *testing.T) {
 	{
 		base := event.NewBaseEffectContext()
 		base.Cancel()
-		ctx := piece_action.PieceAttackActionContext{BaseEffectContext: base, Point: pkg.Point{X: 5, Y: 6}, Value: 10}
+		ctx := piece_action.PieceAttackActionContext{BaseEffectContext: base, Point: pkg.Point{X: 5, Y: 6}, Value: 10, ActionCost: 3}
 		m := ctx.ToMap()
 		point := m["point"].(map[string]interface{})
-		if point["x"] != 5 || point["y"] != 6 || m["value"] != 10 {
+		if point["x"] != 5 || point["y"] != 6 || m["value"] != 10 || m["action_cost"] != 3 {
 			t.Fatalf("attack serialization incorrect: %v", m)
 		}
 		dst := &piece_action.PieceAttackActionContext{}
 		if err := dst.FromMap(m); err != nil {
 			t.Fatalf("attack FromMap error: %v", err)
 		}
-		if dst.Point != (pkg.Point{5, 6}) || dst.Value != 10 || !dst.IsCanceled() {
+		if dst.Point != (pkg.Point{5, 6}) || dst.Value != 10 || dst.ActionCost != 3 || !dst.IsCanceled() {
 			t.Fatalf("attack context not restored: %+v", dst)
 		}
 	}

@@ -39,11 +39,6 @@ func Game(ctx context.Context, rc RequireContents, id uuid.UUID, info GameInfo) 
 
 	var packet network.Packet
 	input := repository.GetGameChannel(id)
-	if input == nil || input.Chan == nil {
-		input = repository.AddGameChannel(id, make(chan network.UnsolvedPacket))
-	}
-	input.Living.Store(true)
-	defer input.Living.Store(false)
 	npcID := uuid.New()
 
 	mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck := DemoDecks(&rc)

@@ -1,9 +1,13 @@
 package data
 
-import (
-	"github.com/google/uuid"
-)
+import "github.com/google/uuid"
 
+type Card struct {
+	Tag  string    `json:"tag"`
+	UUID uuid.UUID `json:"uuid"`
+}
+
+/*
 type Card struct {
 	Type   int       `json:"type"`
 	Tag    string    `json:"tag"`
@@ -18,3 +22,4 @@ type PieceCard struct {
 	Hp  int `json:"hp"`
 	Mp  int `json:"mp"`
 }
+*/

@@ -1,12 +1,6 @@
 package translator
 
-import (
-	"frontage/pkg"
-	"frontage/pkg/engine/impl/card"
-	"frontage/pkg/network/data"
-	"frontage/pkg/network/repository"
-)
-
+/*
 type CardTranslator struct {
 	cardRepo      *repository.CardRepository
 	materialsTran *MaterialsTranslator
@@ -61,3 +55,4 @@ func (cr *CardTranslator) FromPieceModel(m card.Piece) (data.PieceCard, error) {
 		Mp:  m.MP(),
 	}, nil
 }
+*/

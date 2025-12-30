@@ -33,6 +33,8 @@ var (
 	PIECE_DEATH_BY_BURN_ACTION     logic.EffectActionTag = "pieceaction.piece.death_by_burn"
 	PIECE_DEATH_BY_ATTACK_ACTION   logic.EffectActionTag = "pieceaction.piece.death_by_attack"
 	PIECE_DEATH_BY_INVASION_ACTION logic.EffectActionTag = "pieceaction.piece.death_by_invasion"
+	PLAYER_DRAW_MAIN_DECK_ACTION   logic.EffectActionTag = "playeraction.deck.draw_main"
+	PLAYER_DRAW_SUB_DECK_ACTION    logic.EffectActionTag = "playeraction.deck.draw_sub"
 )
 
 var (

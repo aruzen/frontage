@@ -24,6 +24,24 @@ type EventSystem struct {
 	Summaries      []*[]ActionSummary
 }
 
+func NewEventSystem(board *model.Board) *EventSystem {
+	return &EventSystem{
+		Board:          board,
+		active:         nil,
+		isRunning:      false,
+		AppliedEffects: []ActionResult{},
+		Summaries:      []*[]ActionSummary{},
+	}
+}
+
+func (es *EventSystem) Clean() {
+	es.trigger = nil
+	es.active = nil
+	es.isRunning = false
+	es.AppliedEffects = make([]ActionResult, 0)
+	es.Summaries = make([]*[]ActionSummary, 0)
+}
+
 func PreListenHelper(es *EventSystem, maybe interface{}, action Action, state ActionState) {
 	if listener, ok := maybe.(PreListener); ok {
 		listener.PreListen(es, action, state)

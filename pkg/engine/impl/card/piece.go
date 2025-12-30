@@ -108,6 +108,10 @@ func (p *BasePiece) CardCopy() model.MutableCard {
 	return p.Copy().(model.MutableCard)
 }
 
+func (p *BasePiece) CardMirror(uuid uuid.UUID) model.MutableCard {
+	return p.Mirror(uuid).(model.MutableCard)
+}
+
 func (p *BasePiece) SetHP(i int) {
 	p.hp = i
 }

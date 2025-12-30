@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"frontage/internal/log"
 	"frontage/pkg/engine/impl/action"
@@ -34,6 +35,12 @@ var (
 	actionRepo *repository.ActionRepository
 )
 
+type ServerInfo struct {
+	TLSEnabled bool
+}
+
+var serverInfo ServerInfo
+
 func main() {
 	action_register.Init()
 	actionRepo = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
@@ -42,6 +49,8 @@ func main() {
 		return action.FindActionEffect(tag)
 	})
 	log.Init(true)
+	// FIXME
+	serverInfo.TLSEnabled = true
 
 	systemCtx := context.Background()
 	systemCtx, systemFinish := context.WithCancel(systemCtx)
@@ -50,15 +59,26 @@ func main() {
 	go systemLoop(systemCtx, systemVisitPlayer)
 	go lobbyLoop(systemCtx, lobbyVisitPlayer)
 
-	addr, err := net.ResolveTCPAddr("udp", ":8275")
-	listener, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		slog.Error("Failed to listen TCP address", "err", err)
-		return
+	var listener net.Listener
+	if serverInfo.TLSEnabled {
+		var err error
+		listener, err = tls.Listen("tcp", ":443", &tls.Config{ /* certs */ })
+		if err != nil {
+			slog.Error("Failed to listen TSL", "err", err)
+		}
+	} else {
+		addr, err := net.ResolveTCPAddr("udp", ":8275")
+		if err != nil {
+			slog.Error("Failed to resolve TCP address", "err", err)
+			return
+		}
+		listener, err = net.ListenTCP("tcp", addr)
+		if err != nil {
+			slog.Error("Failed to listen TCP", "err", err)
+			return
+		}
 	}
-	if err != nil {
-		slog.Error("Failed to resolve TCP address", "err", err)
-	}
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {

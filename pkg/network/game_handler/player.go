@@ -14,6 +14,7 @@ var ErrUnexpectedPlayer = errors.New("player is not LocalPlayer")
 type ActPieceSkillHandler struct{}
 type ActStructureSkillHandler struct{}
 type PlayCardHandler struct{}
+type DrawPhaseHandler struct{}
 
 func NewActPieceSkillHandler() *ActPieceSkillHandler {
 	return &ActPieceSkillHandler{}
@@ -25,6 +26,10 @@ func NewActStructureSkillHandler() *ActStructureSkillHandler {
 
 func NewPlayCardHandler() *PlayCardHandler {
 	return &PlayCardHandler{}
+}
+
+func NewDrawPhaseHandler() *DrawPhaseHandler {
+	return &DrawPhaseHandler{}
 }
 
 func (h *ActPieceSkillHandler) ServePacket(board *model.Board, data []byte) (model.Piece, game_api.ActPieceSkillPacket, error) {
@@ -89,4 +94,12 @@ func (h *PlayCardHandler) ServePacket(board *model.Board, data []byte) (model.Ca
 		}
 	}
 	return nil, ErrCardNotFound
+}
+
+func (h *DrawPhaseHandler) ServePacket(data []byte) (int, error) {
+	var packet game_api.DrawPhasePacket
+	if err := json.Unmarshal(data, &packet); err != nil {
+		return 0, err
+	}
+	return packet.DrawType, nil
 }

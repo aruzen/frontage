@@ -8,7 +8,7 @@ import (
 type SystemNoticeState struct {
 }
 
-func (s SystemNoticeState) ToMap() map[string]interface{} {
+func (s *SystemNoticeState) ToMap() map[string]interface{} {
 	return map[string]interface{}{}
 }
 

@@ -19,10 +19,6 @@ type MyDeckUploadHandler struct {
 	cardRepo *repository.CardRepository
 }
 
-type TurnPassHandler struct{}
-type TurnStartHandler struct{}
-type TurnEndHandler struct{}
-
 func NewInitializeHandler() *GameInitializeHandler {
 	return &GameInitializeHandler{}
 }
@@ -50,8 +46,8 @@ func (handler *OpponentPlayerInitializeHandler) ServePacket(data []byte) (uuid.U
 	return packet.Id, packet.Name, nil
 }
 
-func NewMyDeckUploadHandler(cardRepo *repository.CardRepository) MyDeckUploadHandler {
-	return MyDeckUploadHandler{
+func NewMyDeckUploadHandler(cardRepo *repository.CardRepository) *MyDeckUploadHandler {
+	return &MyDeckUploadHandler{
 		cardRepo: cardRepo,
 	}
 }
@@ -82,40 +78,4 @@ func (h *MyDeckUploadHandler) ServePacket(data []byte) (model.Cards, model.Cards
 		return nil, nil, err
 	}
 	return mainDeck, subDeck, nil
-}
-
-func NewTurnPassHandler() *TurnPassHandler {
-	return &TurnPassHandler{}
-}
-
-func (h *TurnPassHandler) ServePacket(data []byte) (int, error) {
-	var packet game_api.TurnPassPacket
-	if err := json.Unmarshal(data, &packet); err != nil {
-		return 0, err
-	}
-	return packet.Turn, nil
-}
-
-func NewTurnStartHandler() *TurnStartHandler {
-	return &TurnStartHandler{}
-}
-
-func (h *TurnStartHandler) ServePacket(data []byte) (int, error) {
-	var packet game_api.TurnStartPacket
-	if err := json.Unmarshal(data, &packet); err != nil {
-		return 0, err
-	}
-	return packet.Turn, nil
-}
-
-func NewTurnEndHandler() *TurnEndHandler {
-	return &TurnEndHandler{}
-}
-
-func (h *TurnEndHandler) ServePacket(data []byte) (int, error) {
-	var packet game_api.TurnEndPacket
-	if err := json.Unmarshal(data, &packet); err != nil {
-		return 0, err
-	}
-	return packet.Turn, nil
 }

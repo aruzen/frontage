@@ -3,11 +3,15 @@ package game_api
 import "frontage/pkg/network"
 
 type TurnStartPacket struct {
-	Turn int `json:"turn"`
+	Turn       int  `json:"turn"`
+	IsYourSide bool `json:"is_your_side"`
+	TurnTime   int  `json:"turn_time"`
+	ExtraTime  int  `json:"extra_time"`
 }
 
 type TurnEndPacket struct {
-	Turn int `json:"turn"`
+	Turn       int  `json:"turn"`
+	IsYourSide bool `json:"is_your_side"`
 }
 
 type TurnPassPacket struct {

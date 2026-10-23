@@ -28,6 +28,7 @@ func (b *BaseEffectContext) ToMap() map[string]interface{} {
 }
 
 func (b *BaseEffectContext) FromMap(m map[string]interface{}) error {
+	b.canceled = false
 	if m == nil {
 		return nil
 	}

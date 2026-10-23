@@ -3,6 +3,8 @@ package pkg
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"math"
+	"strconv"
 )
 
 import "log/slog"
@@ -105,27 +107,48 @@ func Replace2DPtr[T any](data [][]*T, target *T, value *T) bool {
 	return false
 }
 
-// ToInt converts various numeric interface values to int.
-// Returns an error if the underlying type is not a number.
+// ToInt converts numeric values to int without truncation or overflow.
+// It rejects fractions, non-finite values and values outside the int range.
 func ToInt(v interface{}) (int, error) {
 	switch val := v.(type) {
 	case int:
 		return val, nil
 	case int64:
-		return int(val), nil
+		converted := int(val)
+		if int64(converted) != val {
+			return 0, fmt.Errorf("value %d is outside the int range", val)
+		}
+		return converted, nil
 	case float64:
-		return int(val), nil
+		return floatToInt(val)
 	case float32:
-		return int(val), nil
+		return floatToInt(float64(val))
 	case uint:
+		if val > ^uint(0)>>1 {
+			return 0, fmt.Errorf("value %d is outside the int range", val)
+		}
 		return int(val), nil
 	case uint64:
+		if val > uint64(^uint(0)>>1) {
+			return 0, fmt.Errorf("value %d is outside the int range", val)
+		}
 		return int(val), nil
 	case nil:
 		return 0, fmt.Errorf("value is nil")
 	default:
 		return 0, fmt.Errorf("expected number, got %T", v)
 	}
+}
+
+func floatToInt(value float64) (int, error) {
+	if math.IsNaN(value) || math.IsInf(value, 0) || math.Trunc(value) != value {
+		return 0, fmt.Errorf("expected a finite integer, got %v", value)
+	}
+	limit := math.Ldexp(1, strconv.IntSize-1)
+	if value < -limit || value >= limit {
+		return 0, fmt.Errorf("value %v is outside the int range", value)
+	}
+	return int(value), nil
 }
 
 func ToUUID(v interface{}) (uuid.UUID, error) {

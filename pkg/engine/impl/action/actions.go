@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"frontage/pkg/engine/logic"
+	"sync"
 )
 
 var (
@@ -50,10 +51,15 @@ var (
 	PLAYER_LOSE_ACTION logic.EffectActionTag = logic.PLAYER_LOSE_ACTION_TAG
 )
 
-var effectActionTable map[logic.EffectActionTag]logic.EffectAction
-var modifyActionTable map[logic.ModifyActionTag]logic.ModifyAction
+var (
+	actionTableMu     sync.RWMutex
+	effectActionTable map[logic.EffectActionTag]logic.EffectAction
+	modifyActionTable map[logic.ModifyActionTag]logic.ModifyAction
+)
 
 func Register(tag logic.EffectActionTag, action logic.EffectAction) error {
+	actionTableMu.Lock()
+	defer actionTableMu.Unlock()
 	if effectActionTable == nil {
 		effectActionTable = make(map[logic.EffectActionTag]logic.EffectAction)
 	}
@@ -65,6 +71,8 @@ func Register(tag logic.EffectActionTag, action logic.EffectAction) error {
 }
 
 func RegisterModify(tag logic.ModifyActionTag, action logic.ModifyAction) error {
+	actionTableMu.Lock()
+	defer actionTableMu.Unlock()
 	if modifyActionTable == nil {
 		modifyActionTable = make(map[logic.ModifyActionTag]logic.ModifyAction)
 	}
@@ -76,9 +84,13 @@ func RegisterModify(tag logic.ModifyActionTag, action logic.ModifyAction) error 
 }
 
 func FindActionEffect(tag logic.EffectActionTag) logic.EffectAction {
+	actionTableMu.RLock()
+	defer actionTableMu.RUnlock()
 	return effectActionTable[tag]
 }
 
 func FindActionModify(tag logic.ModifyActionTag) logic.ModifyAction {
+	actionTableMu.RLock()
+	defer actionTableMu.RUnlock()
 	return modifyActionTable[tag]
 }

@@ -209,6 +209,8 @@ func (p PieceActionState) ToMap() map[string]interface{} {
 }
 
 func (p *PieceActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	p.holder = nil
+	p.piece = nil
 	var err error
 	p.holderID, err = pkg.ToUUID(m["holder_id"])
 	if err != nil {

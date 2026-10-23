@@ -161,6 +161,7 @@ func (s PieceSummonActionState) ToMap() map[string]interface{} {
 }
 
 func (s *PieceSummonActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	s.piece = nil
 	id, err := pkg.ToUUID(m["piece_id"])
 	if err != nil {
 		return fmt.Errorf("piece_id: %w", err)
@@ -190,6 +191,7 @@ func (s PieceMoveActionState) ToMap() map[string]interface{} {
 }
 
 func (s *PieceMoveActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	s.piece = nil
 	id, err := pkg.ToUUID(m["piece_id"])
 	if err != nil {
 		return fmt.Errorf("piece_id: %w", err)
@@ -233,6 +235,7 @@ func (s PieceAttackActionState) ToMap() map[string]interface{} {
 }
 
 func (s *PieceAttackActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	s.piece = nil
 	id, err := pkg.ToUUID(m["piece_id"])
 	if err != nil {
 		return fmt.Errorf("piece_id: %w", err)

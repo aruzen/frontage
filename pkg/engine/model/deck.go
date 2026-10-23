@@ -312,7 +312,13 @@ func (cs *Cards) PushTop(cards Cards) {
 }
 
 func (cs *Cards) PushBottom(cards Cards) {
-	*cs = append(cards, *cs...)
+	if len(cards) == 0 {
+		return
+	}
+	next := make(Cards, len(cards)+len(*cs))
+	copy(next, cards)
+	copy(next[len(cards):], *cs)
+	*cs = next
 }
 
 func (cs *Cards) Replace(target Card, value Card) bool {

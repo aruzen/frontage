@@ -74,7 +74,7 @@ func (b *BaseCard) PlayCost() Materials {
 }
 
 func (b *BaseCard) SetPlayCost(playCost Materials) {
-	b.playCost = playCost
+	b.playCost = playCost.Copy()
 }
 
 func (b *BaseCard) Type() CardType {

@@ -98,11 +98,22 @@ func (es *EventSystem) transmission(listenHelper func(es *EventSystem, maybe int
 }
 
 func (es *EventSystem) Emit(event *EffectEvent) {
+	if es == nil {
+		return
+	}
+	es.trigger = nil
+	es.active = nil
+	if es.Board == nil || !validEvent(event) {
+		return
+	}
 	es.trigger = event
 	es.transmission(PreListenHelper, event)
 }
 
 func (es *EventSystem) Chain(event Event) {
+	if es == nil || es.Board == nil || !validEvent(event) {
+		return
+	}
 	if es.active == nil {
 		slog.Error("prevActive is nil")
 		return
@@ -128,6 +139,13 @@ func (es *EventSystem) Chain(event Event) {
 }
 
 func (es *EventSystem) ChainLine(event Event, pending ...Event) {
+	if es == nil || es.Board == nil || !validEvent(event) {
+		return
+	}
+	if es.active == nil {
+		slog.Error("prevActive is nil")
+		return
+	}
 	prevActive := es.active
 	defer func() { es.active = prevActive }()
 	base := event.base()
@@ -152,10 +170,7 @@ func (es *EventSystem) ChainLine(event Event, pending ...Event) {
 }
 
 func IntegrityCheck(a Action, state ActionState) bool {
-	if a == nil {
-		return false
-	}
-	if state == nil {
+	if isNil(a) || isNil(state) {
 		return false
 	}
 	stateType := reflect.TypeOf(state)
@@ -167,4 +182,21 @@ func IntegrityCheck(a Action, state ActionState) bool {
 		return true
 	}
 	return false
+}
+
+func validEvent(event Event) bool {
+	return !isNil(event) && IntegrityCheck(event.Action(), event.State())
+}
+
+func isNil(value interface{}) bool {
+	if value == nil {
+		return true
+	}
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return v.IsNil()
+	default:
+		return false
+	}
 }

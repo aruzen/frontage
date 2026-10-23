@@ -109,6 +109,9 @@ func (a *BaseAction[StateType, ContextType]) CastStateContext(state ActionState,
 	default:
 		return nil, nil, false
 	}
+	if castedState == nil || castedContext == nil {
+		return nil, nil, false
+	}
 	return castedState, castedContext, true
 }
 

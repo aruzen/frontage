@@ -39,7 +39,8 @@ func (cs Cards) Find(count uint, pred func(Card) bool) (Cards, bool) {
 }
 
 func (cs Cards) FindTop(pred func(Card) bool) (Card, bool) {
-	for _, card := range cs {
+	for i := len(cs) - 1; i >= 0; i-- {
+		card := cs[i]
 		if pred(card) {
 			return card, true
 		}

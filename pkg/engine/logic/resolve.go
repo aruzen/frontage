@@ -108,7 +108,7 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 
 	context, tmpSummary := e.action.Act(e.State(), beforeEffect, beforeContext)
 	appendSummary(&summaries, e.action, SUMMARY_TYPE_ACT, tmpSummary)
-	if context == nil {
+	if isNil(context) {
 		return
 	}
 
@@ -116,7 +116,7 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 		context = e.modifier.Resolve(es, e.action, context, &summaries)
 	}
 
-	if context == nil || context.IsCanceled() {
+	if isNil(context) || context.IsCanceled() {
 		return
 	}
 
@@ -150,7 +150,7 @@ func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context Effe
 	}
 	context, tmpSummary := e.action.Modify(e.state, context)
 	appendSummary(summaries, e.action, SUMMARY_TYPE_MODIFY, tmpSummary)
-	if context == nil {
+	if isNil(context) {
 		return nil
 	}
 

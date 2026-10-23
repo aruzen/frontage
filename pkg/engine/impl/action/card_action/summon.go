@@ -169,14 +169,16 @@ func (e PieceSummonAction) Solve(board *model.Board, state logic.ActionState, co
 	if deck == nil {
 		return board, nil
 	}
+	current, found := deck.FindById(s.cardID)
+	source, ok := current.(card.Piece)
+	if !found || !ok {
+		return board, nil
+	}
 	if !deck.RemoveById(s.cardID) {
 		return board, nil
 	}
-	if s.piece == nil {
-		return board, nil
-	}
-	piece := model.NewBasePiece(s.summonID, owner, c.Point, s.piece.HP(), s.piece.MP(), s.piece.ATK(), s.piece.LegalMoves(), s.piece.AttackRanges())
-	piece.SetLocalizeTag(s.piece.LocalizeTag())
+	piece := model.NewBasePiece(s.summonID, owner, c.Point, source.HP(), source.MP(), source.ATK(), source.LegalMoves(), source.AttackRanges())
+	piece.SetLocalizeTag(source.LocalizeTag())
 	piece.SetUsedActionCost(piece.MaxActionCost())
 	if !next.SetPiece(c.Point, piece) {
 		return board, nil

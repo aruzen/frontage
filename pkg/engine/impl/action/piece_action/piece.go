@@ -358,6 +358,10 @@ func (e PieceAttackAction) Solve(board *model.Board, state logic.ActionState, co
 	if !ok {
 		return board, nil
 	}
+	// Preserve the state pointer shared with the damage event, but clear old hits.
+	if s.decreaseHPState != nil {
+		*s.decreaseHPState = PieceOperateActionState{}
+	}
 	if board == nil {
 		return nil, nil
 	}
@@ -413,6 +417,9 @@ func (e PieceInvasionAction) Solve(board *model.Board, state logic.ActionState, 
 	if !ok {
 		return board, nil
 	}
+	if s.decreaseHPState != nil {
+		*s.decreaseHPState = PieceOperateActionState{}
+	}
 	if board == nil {
 		return nil, nil
 	}
@@ -442,7 +449,7 @@ func (e PieceInvasionAction) Solve(board *model.Board, state logic.ActionState, 
 
 func (e PieceInvasionAction) SubEffects(state logic.ActionState) []*logic.EffectEvent {
 	s, ok := state.(*PieceAttackActionState)
-	if !ok {
+	if !ok || s == nil || s.piece == nil {
 		return nil
 	}
 	if s.decreaseHPState == nil {

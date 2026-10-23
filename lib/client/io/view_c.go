@@ -194,11 +194,9 @@ func FreeCardView(view *C.CardView) {
 		C.free(unsafe.Pointer(view.uuid))
 	}
 	if view.costs != nil {
-		count := int(view.cost_count)
-		costs := (*[1 << 30]C.MaterialCostView)(unsafe.Pointer(view.costs))[:count:count]
-		_ = costs
 		C.free(unsafe.Pointer(view.costs))
 	}
+	*view = C.CardView{}
 }
 
 //export FreeBoardView
@@ -213,10 +211,14 @@ func FreeBoardView(view *C.BoardView) {
 			if pieces[i].id != nil {
 				C.free(unsafe.Pointer(pieces[i].id))
 			}
+			if pieces[i].tag != nil {
+				C.free(unsafe.Pointer(pieces[i].tag))
+			}
 			if pieces[i].owner_id != nil {
 				C.free(unsafe.Pointer(pieces[i].owner_id))
 			}
 		}
 		C.free(unsafe.Pointer(view.pieces))
 	}
+	*view = C.BoardView{}
 }

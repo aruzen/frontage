@@ -63,37 +63,7 @@ func Game(ctx context.Context, requireRepos RequireContents, ids [2]uuid.UUID, i
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {-1, -1}, {1, -1}},
 		[]pkg.Point{{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {-1, -1}, {1, -1}}))
 
-	mainNaturoDeck := make(model.Cards, 8)
-	subNaturoDeck := make(model.Cards, 8)
-	for k, v := range map[pkg.LocalizeTag]int{
-		"少年グルーシャ":    4,
-		"爛漫に咲く花・姫百子": 4,
-	} {
-		find, err := requireRepos.CardRepo.Find(k)
-		if err != nil {
-			continue
-		}
-		for i := 0; i < v; i++ {
-			mainNaturoDeck = append(mainNaturoDeck, find.CardCopy())
-			subNaturoDeck = append(subNaturoDeck, find.CardCopy())
-		}
-	}
-
-	mainPyroDeck := make(model.Cards, 8)
-	subPyroDeck := make(model.Cards, 8)
-	for k, v := range map[pkg.LocalizeTag]int{
-		"生まれたばかりの灯・ベビードレイク": 4,
-		"旗将炎猿・ドモルドス":        4,
-	} {
-		find, err := requireRepos.CardRepo.Find(k)
-		if err != nil {
-			continue
-		}
-		for i := 0; i < v; i++ {
-			mainPyroDeck = append(mainPyroDeck, find.CardCopy())
-			subPyroDeck = append(subPyroDeck, find.CardCopy())
-		}
-	}
+	mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck := DemoDecks(&requireRepos)
 
 	players := [2]model.Player{
 		model.NewLocalPlayer(ids[0], mainNaturoDeck, subNaturoDeck),
@@ -124,4 +94,40 @@ func Game(ctx context.Context, requireRepos RequireContents, ids [2]uuid.UUID, i
 
 func listenPlayerInput() {
 
+}
+
+func DemoDecks(requireRepos *RequireContents) (model.Cards, model.Cards, model.Cards, model.Cards) {
+	mainNaturoDeck := make(model.Cards, 0, 8)
+	subNaturoDeck := make(model.Cards, 0, 8)
+	for k, v := range map[pkg.LocalizeTag]int{
+		"少年グルーシャ":    4,
+		"爛漫に咲く花・姫百子": 4,
+	} {
+		find, err := requireRepos.CardRepo.Find(k)
+		if err != nil {
+			continue
+		}
+		for i := 0; i < v; i++ {
+			mainNaturoDeck = append(mainNaturoDeck, find.CardMirror(uuid.New()))
+			subNaturoDeck = append(subNaturoDeck, find.CardMirror(uuid.New()))
+		}
+	}
+
+	mainPyroDeck := make(model.Cards, 0, 8)
+	subPyroDeck := make(model.Cards, 0, 8)
+	for k, v := range map[pkg.LocalizeTag]int{
+		"生まれたばかりの灯・ベビードレイク": 4,
+		"旗将炎猿・ドモルドス":        4,
+	} {
+		find, err := requireRepos.CardRepo.Find(k)
+		if err != nil {
+			continue
+		}
+		for i := 0; i < v; i++ {
+			mainPyroDeck = append(mainPyroDeck, find.CardMirror(uuid.New()))
+			subPyroDeck = append(subPyroDeck, find.CardMirror(uuid.New()))
+		}
+	}
+
+	return mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck
 }

@@ -4,6 +4,18 @@
 
 ## 実行
 
+ローカルのカード対戦サンプルは次のコマンドで起動します。12種類のカードと5×5盤面を使い、ターミナルでNPCと対戦できます。
+
+```sh
+go run ./cmd/sample-game
+```
+
+```sh
+go run ./cmd/sample-game -auto -quiet -seed 1
+```
+
+自動対戦も可能です。操作・サンプル用ルール・実装の範囲は [sample-gameの説明](cmd/sample-game/README.md) を参照してください。
+
 開発用のTCPサーバーを起動します。
 
 ```sh

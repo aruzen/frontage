@@ -5,7 +5,6 @@ import (
 	"github.com/google/uuid"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 )
 
 var (
@@ -14,8 +13,50 @@ var (
 )
 
 type BarrierGameChannel struct {
-	Living atomic.Bool
+	Living GameChannelStatus
 	Chan   chan network.UnsolvedPacket
+}
+
+// GameChannelStatus preserves Load/Store while notifying pending deliveries when
+// a game stops. Each false-to-true transition starts a new notification lifetime.
+// It must not be copied after first use.
+type GameChannelStatus struct {
+	mu     sync.Mutex
+	living bool
+	done   chan struct{}
+}
+
+func (s *GameChannelStatus) Load() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.living
+}
+
+func (s *GameChannelStatus) Store(living bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.living == living {
+		return
+	}
+	if living {
+		s.done = make(chan struct{})
+	} else if s.done != nil {
+		close(s.done)
+	}
+	s.living = living
+}
+
+// Snapshot returns the activity and stop notification for the same game lifetime.
+func (s *GameChannelStatus) Snapshot() (bool, <-chan struct{}) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.done == nil {
+		s.done = make(chan struct{})
+		if !s.living {
+			close(s.done)
+		}
+	}
+	return s.living, s.done
 }
 
 func GetGameChannel(id uuid.UUID) *BarrierGameChannel {
@@ -31,6 +72,9 @@ func GetGameChannel(id uuid.UUID) *BarrierGameChannel {
 func AddGameChannel(id uuid.UUID, gameChan chan network.UnsolvedPacket) *BarrierGameChannel {
 	gameChannelTableMu.Lock()
 	defer gameChannelTableMu.Unlock()
+	if previous := gameChannelTable[id]; previous != nil {
+		previous.Living.Store(false)
+	}
 	v := &BarrierGameChannel{
 		Chan: gameChan,
 	}
@@ -42,5 +86,8 @@ func AddGameChannel(id uuid.UUID, gameChan chan network.UnsolvedPacket) *Barrier
 func RemoveGameChannel(id uuid.UUID) {
 	gameChannelTableMu.Lock()
 	defer gameChannelTableMu.Unlock()
+	if previous := gameChannelTable[id]; previous != nil {
+		previous.Living.Store(false)
+	}
 	delete(gameChannelTable, id)
 }

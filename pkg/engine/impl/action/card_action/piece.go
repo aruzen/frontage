@@ -243,7 +243,7 @@ func (p *PieceActionState) FromMap(b *model.Board, m map[string]interface{}) err
 
 	deck := p.holder.GetDeck(p.deckType)
 	if deck == nil {
-		slog.Warn("deck is nil for holder", "holder", p.holderID, "deckType", p.deckType)
+		return fmt.Errorf("invalid deck type: %d", p.deckType)
 	}
 
 	c, ok := deck.FindById(p.cardID)

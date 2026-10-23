@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"frontage/pkg"
 	"testing"
 
@@ -183,5 +184,63 @@ func TestBoardUpdatePiece(t *testing.T) {
 	missing := NewBasePiece(uuid.New(), owner, pkg.Point{X: 0, Y: 0}, 5, 3, 1, nil, nil)
 	if board.UpdatePiece(missing) {
 		t.Fatalf("UpdatePiece should fail for unknown piece")
+	}
+}
+
+func TestBoardCopiesIsolateMutableState(t *testing.T) {
+	for _, strategy := range []GenerationStrategy{GENERATION_STRATEGY_CHAIN, GENERATION_STRATEGY_SWAP} {
+		t.Run(fmt.Sprint(strategy), func(t *testing.T) {
+			board := NewBoard(NewBoardInfo(pkg.Size{Width: 3, Height: 3}, strategy),
+				[2]Player{NewLocalPlayer(uuid.New(), Cards{NewBaseCard("test", nil)}, nil), NewProxyPlayer(uuid.New())})
+			piece := NewBasePiece(uuid.New(), board.Players()[0], pkg.Point{}, 10, 5, 3, nil, nil)
+			board.SetPiece(pkg.Point{}, piece)
+			for _, copyBoard := range []struct {
+				name string
+				copy func() *Board
+			}{{"Copy", board.Copy}, {"Sandbox", board.Sandbox}, {"Next", board.Next}} {
+				t.Run(copyBoard.name, func(t *testing.T) {
+					copied := copyBoard.copy()
+					copiedPiece, _ := copied.GetPiece(piece.Id())
+					copiedPiece.(MutablePiece).SetHP(7)
+					copied.SetPiece(pkg.Point{X: 1, Y: 1}, copiedPiece)
+					copiedPiece.Owner().SetGodBlessing(0)
+					deck := copied.Players()[0].(DeckPlayer).GetDeck(DECK_TYPE_MAIN)
+					(*deck)[0].(MutableCard).SetPlayCost(Materials{PYRO: 9})
+					if piece.HP() != 10 || piece.Position() != (pkg.Point{}) {
+						t.Fatalf("copy changed original piece: HP=%d, position=%v", piece.HP(), piece.Position())
+					}
+					if board.Players()[0].GodBlessing() != DEFAULT_GOD_BLESSING_POINTS {
+						t.Fatal("copy changed original player through piece owner")
+					}
+					if copiedPiece.Owner() != copied.Players()[0] {
+						t.Fatal("copied piece owner is not the copied player")
+					}
+					originalDeck := board.Players()[0].(DeckPlayer).GetDeck(DECK_TYPE_MAIN)
+					if len((*originalDeck)[0].PlayCost()) != 0 {
+						t.Fatal("copy changed original card")
+					}
+				})
+			}
+			// Exercise the reuse branch of the swap generation strategy too.
+			next := board.Next()
+			latest := next.Next()
+			latestPiece, _ := latest.GetPiece(piece.Id())
+			latestPiece.(MutablePiece).SetHP(1)
+			previousPiece, _ := next.GetPiece(piece.Id())
+			if previousPiece.HP() != 10 {
+				t.Fatal("reused board generation shares mutable pieces with its predecessor")
+			}
+		})
+	}
+}
+
+func TestBoardAdvanceTurnAlternatesActivePlayer(t *testing.T) {
+	board := newTestBoard()
+	players := board.Players()
+	for turn := 0; turn < 6; turn++ {
+		if board.Turn() != turn || board.ActivePlayer().ID() != players[turn%2].ID() {
+			t.Fatalf("turn %d: got turn %d, player %v", turn, board.Turn(), board.ActivePlayer().ID())
+		}
+		board = board.AdvanceTurn()
 	}
 }

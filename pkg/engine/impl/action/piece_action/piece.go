@@ -47,6 +47,21 @@ func (s PieceAttackActionState) ActionCost() int                         { retur
 func (s PieceAttackActionState) DecreaseState() *PieceOperateActionState { return s.decreaseHPState }
 func (s PieceAttackActionState) Piece() model.Piece                      { return s.piece }
 
+func (s *PieceAttackActionState) CloneState(board *model.Board, clone func(logic.ActionState) (logic.ActionState, error)) (logic.ActionState, error) {
+	copied := &PieceAttackActionState{}
+	if err := copied.FromMap(board, s.ToMap()); err != nil {
+		return nil, err
+	}
+	if s.decreaseHPState != nil {
+		child, err := clone(s.decreaseHPState)
+		if err != nil {
+			return nil, err
+		}
+		copied.decreaseHPState = child.(*PieceOperateActionState)
+	}
+	return copied, nil
+}
+
 type PieceSummonActionContext struct {
 	event.BaseEffectContext
 	Point pkg.Point
@@ -291,7 +306,16 @@ func (e PieceSummonAction) Solve(board *model.Board, state logic.ActionState, co
 		return board, nil
 	}
 	next := board.Next()
-	if !next.SetPiece(c.Point, c.Piece) {
+	if c.Piece == nil {
+		return board, nil
+	}
+	piece := c.Piece.Copy()
+	if owner := piece.Owner(); owner != nil {
+		if player, ok := next.FindPlayer(owner.ID()); ok {
+			piece.SetOwner(player)
+		}
+	}
+	if !next.SetPiece(c.Point, piece) {
 		return board, nil
 	}
 	return next, logic.Summary{"placed_at": pkg.PointToMap(c.Point)}
@@ -311,10 +335,11 @@ func (e PieceMoveAction) Solve(board *model.Board, state logic.ActionState, cont
 	}
 	next := board.Next()
 
-	if !next.SetPiece(c.Point, s.piece) {
+	piece, exists := next.GetPiece(s.pieceID)
+	if !exists || !next.SetPiece(c.Point, piece) {
 		return board, nil
 	}
-	if mp, ok := s.piece.(model.MutablePiece); ok {
+	if mp, ok := piece.(model.MutablePiece); ok {
 		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
 		_ = next.UpdatePiece(mp)
 	}
@@ -351,7 +376,8 @@ func (e PieceAttackAction) Solve(board *model.Board, state logic.ActionState, co
 	s.decreaseHPState.pieceID = target.Id()
 	s.decreaseHPState.piece = target.Copy()
 	s.decreaseHPState.value = c.Value
-	if mp, ok := s.piece.(model.MutablePiece); ok {
+	if piece, exists := board.GetPiece(s.pieceID); exists {
+		mp := piece.(model.MutablePiece)
 		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
 		_ = board.UpdatePiece(mp)
 	}
@@ -400,10 +426,14 @@ func (e PieceInvasionAction) Solve(board *model.Board, state logic.ActionState, 
 	}
 	board = board.Next()
 
+	if s.decreaseHPState == nil {
+		s.decreaseHPState = &PieceOperateActionState{}
+	}
 	s.decreaseHPState.pieceID = target.Id()
 	s.decreaseHPState.piece = target.Copy()
 	s.decreaseHPState.value = c.Value
-	if mp, ok := s.piece.(model.MutablePiece); ok {
+	if piece, exists := board.GetPiece(s.pieceID); exists {
+		mp := piece.(model.MutablePiece)
 		mp.SetUsedActionCost(mp.UsedActionCost() + c.ActionCost)
 		_ = board.UpdatePiece(mp)
 	}

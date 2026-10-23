@@ -17,8 +17,11 @@
 .idea/
 
 # Documents / local notes
+/AGENTS.md
 /document/
 /build/
 
 # Scripts (local)
 /scripts/
+
+worktrees/

@@ -36,6 +36,7 @@ type MutablePiece interface {
 	SetATK(int)
 	SetUsedActionCost(int)
 	SetMaxActionCost(int)
+	SetOwner(Player)
 
 	// SetPosition この関数ではボード側にも適用されないので、呼び出さないでください。`Board.SetPiece(Piece)`を使用してください。
 	SetPosition(pos pkg.Point)
@@ -101,6 +102,10 @@ func (e *BasePiece) ATK() int {
 
 func (e *BasePiece) Owner() Player {
 	return e.owner
+}
+
+func (e *BasePiece) SetOwner(owner Player) {
+	e.owner = owner
 }
 
 func (e *BasePiece) LocalizeTag() pkg.LocalizeTag {

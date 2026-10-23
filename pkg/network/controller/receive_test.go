@@ -118,3 +118,24 @@ func TestReceiveLoopGameBarrier(t *testing.T) {
 	case <-time.After(time.Second):
 	}
 }
+
+func TestReceiveLoopCancellationWhileForwarding(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	server, client := net.Pipe()
+	defer server.Close()
+	defer client.Close()
+	done := make(chan error, 1)
+	go func() {
+		done <- ReceiveLoop(ctx, server, make(chan network.UnsolvedPacket), nil, nil)
+	}()
+	if _, err := client.Write(buildRawPacket(0, []byte("blocked"))); err != nil {
+		t.Fatal(err)
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("cancellation did not interrupt a blocked packet dispatch")
+	}
+}

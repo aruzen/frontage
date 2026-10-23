@@ -264,13 +264,22 @@ func updatePieceCard(board *model.Board, state *PieceActionState, mutate func(ca
 	}
 
 	next := board.Next()
-	holder := state.Holder()
-	if holder == nil {
+	player, found := next.FindPlayer(state.HolderId())
+	holder, ok := player.(*model.LocalPlayer)
+	if !found || !ok {
 		slog.Warn("holder not found")
 		return board
 	}
 	deck := holder.GetDeck(state.DeckType())
-	mut := state.PieceCard().Copy()
+	if deck == nil {
+		return board
+	}
+	current, found := deck.FindById(state.CardID())
+	piece, ok := current.(card.Piece)
+	if !found || !ok {
+		return board
+	}
+	mut := piece.Copy()
 
 	mutate(mut)
 

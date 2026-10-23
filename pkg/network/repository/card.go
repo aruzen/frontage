@@ -3,9 +3,11 @@ package repository
 import (
 	"frontage/pkg"
 	"frontage/pkg/engine/model"
+	"sync"
 )
 
 type CardRepository struct {
+	mu    sync.RWMutex
 	table map[pkg.LocalizeTag]model.Card
 }
 
@@ -16,6 +18,8 @@ func NewCardRepository() *CardRepository {
 }
 
 func (r *CardRepository) Insert(card model.Card) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if _, ok := r.table[card.LocalizeTag()]; ok {
 		return ErrDuplicateTag
 	}
@@ -24,6 +28,8 @@ func (r *CardRepository) Insert(card model.Card) error {
 }
 
 func (r *CardRepository) Find(tag pkg.LocalizeTag) (model.Card, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	card, find := r.table[tag]
 	if !find {
 		return nil, ErrNotFound

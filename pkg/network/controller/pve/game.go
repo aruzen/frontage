@@ -1,28 +1,31 @@
 package pve
 
 import (
-	"context"
 	"frontage/pkg"
 	"frontage/pkg/engine/impl/action"
 	action_register "frontage/pkg/engine/impl/action/register"
 	"frontage/pkg/engine/impl/card"
-	"frontage/pkg/engine/logic"
 	"frontage/pkg/engine/model"
-	"frontage/pkg/network"
 	"frontage/pkg/network/game_dispatcher"
 	"frontage/pkg/network/repository"
 	"github.com/google/uuid"
-	"log/slog"
 	"time"
 )
 
 type GameInfo struct {
-	TurnTimeLimit time.Duration
+	DrawPhaseLimit     time.Duration
+	TurnTimeLimit      time.Duration
+	ExtraTimeLimit     time.Duration
+	SyncResendDuration time.Duration
+	SyncResendMax      int
 }
 
 func DefaultGameInfo() GameInfo {
 	return GameInfo{
-		TurnTimeLimit: time.Minute,
+		DrawPhaseLimit:     15 * time.Second,
+		TurnTimeLimit:      time.Minute,
+		SyncResendDuration: time.Second,
+		SyncResendMax:      3,
 	}
 }
 
@@ -33,62 +36,22 @@ type RequireContents struct {
 	GameInitDisp *game_dispatcher.GameInitializeDispatcher
 }
 
-func Game(ctx context.Context, rc RequireContents, id uuid.UUID, info GameInfo) {
-	// FIXME
-	InitRequireRepositories(&rc)
-
-	var packet network.Packet
-	input := repository.GetGameChannel(id)
-	if input == nil || input.Chan == nil {
-		slog.Error("game channel not found")
-		return
-	}
-	npcID := uuid.New()
-
-	mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck := DemoDecks(&rc)
-
-	players := [2]model.Player{
-		model.NewLocalPlayer(id, mainNaturoDeck, subNaturoDeck),
-		model.NewLocalPlayer(npcID, mainPyroDeck, subPyroDeck),
-	}
-	board := model.NewBoard(model.NewBoardInfo(pkg.Size{7, 7}, model.GENERATION_STRATEGY_SWAP), players)
-	es := &logic.EventSystem{
-		Board: board,
-	}
-	packet, err := rc.GameInitDisp.DispatchPacket(board, players[0])
-	if err != nil {
-		return
-	}
-	repository.SendPacket(id, packet)
-
-	es.Emit(logic.NewEffectEvent(logic.GAME_START_ACTION, logic.GAME_START_ACTION.MakeState(board, nil)))
-	es.Resolve()
-	packet, err = rc.ActEventDisp.DispatchPacket(es.AppliedEffects, es.Summaries)
-	if err != nil {
-		slog.Error("")
-		return
-	}
-	repository.SendPacket(id, packet)
-
-	for {
-		select {
-		case <-input.Chan:
-
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
 // ============================
 
 func InitRequireRepositories(requireRepos *RequireContents) {
 	action_register.Init()
-	requireRepos.ActionRepo = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
-		return action.FindActionModify(tag)
-	}, func(tag logic.EffectActionTag) logic.EffectAction {
-		return action.FindActionEffect(tag)
-	})
+	if requireRepos.ActionRepo == nil {
+		requireRepos.ActionRepo = repository.NewActionRepository(action.FindActionModify, action.FindActionEffect)
+	}
+	if requireRepos.CardRepo == nil {
+		requireRepos.CardRepo = repository.NewCardRepository()
+	}
+	if requireRepos.ActEventDisp == nil {
+		requireRepos.ActEventDisp = game_dispatcher.NewActEventDispatcher(nil, nil)
+	}
+	if requireRepos.GameInitDisp == nil {
+		requireRepos.GameInitDisp = game_dispatcher.NewGameInitializeDispatcher()
+	}
 
 	requireRepos.CardRepo.Insert(card.NewBasePiece(model.NewBaseCard("少年グルーシャ", model.Materials{
 		model.NATURO: 1,
@@ -120,8 +83,8 @@ func InitRequireRepositories(requireRepos *RequireContents) {
 }
 
 func DemoDecks(requireRepos *RequireContents) (model.Cards, model.Cards, model.Cards, model.Cards) {
-	mainNaturoDeck := make(model.Cards, 8)
-	subNaturoDeck := make(model.Cards, 8)
+	mainNaturoDeck := make(model.Cards, 0, 8)
+	subNaturoDeck := make(model.Cards, 0, 8)
 	for k, v := range map[pkg.LocalizeTag]int{
 		"少年グルーシャ":    4,
 		"爛漫に咲く花・姫百子": 4,
@@ -131,13 +94,13 @@ func DemoDecks(requireRepos *RequireContents) (model.Cards, model.Cards, model.C
 			continue
 		}
 		for i := 0; i < v; i++ {
-			mainNaturoDeck = append(mainNaturoDeck, find.CardCopy())
-			subNaturoDeck = append(subNaturoDeck, find.CardCopy())
+			mainNaturoDeck = append(mainNaturoDeck, find.CardMirror(uuid.New()))
+			subNaturoDeck = append(subNaturoDeck, find.CardMirror(uuid.New()))
 		}
 	}
 
-	mainPyroDeck := make(model.Cards, 8)
-	subPyroDeck := make(model.Cards, 8)
+	mainPyroDeck := make(model.Cards, 0, 8)
+	subPyroDeck := make(model.Cards, 0, 8)
 	for k, v := range map[pkg.LocalizeTag]int{
 		"生まれたばかりの灯・ベビードレイク": 4,
 		"旗将炎猿・ドモルドス":        4,
@@ -147,8 +110,8 @@ func DemoDecks(requireRepos *RequireContents) (model.Cards, model.Cards, model.C
 			continue
 		}
 		for i := 0; i < v; i++ {
-			mainPyroDeck = append(mainPyroDeck, find.CardCopy())
-			subPyroDeck = append(subPyroDeck, find.CardCopy())
+			mainPyroDeck = append(mainPyroDeck, find.CardMirror(uuid.New()))
+			subPyroDeck = append(subPyroDeck, find.CardMirror(uuid.New()))
 		}
 	}
 	return mainNaturoDeck, subNaturoDeck, mainPyroDeck, subPyroDeck

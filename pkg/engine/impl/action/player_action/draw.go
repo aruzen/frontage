@@ -45,8 +45,8 @@ func (s *DrawActionState) FromMap(b *model.Board, m map[string]interface{}) erro
 	return nil
 }
 
-func NewDrawActionState(player model.Player) DrawActionState {
-	return DrawActionState{
+func NewDrawActionState(player model.Player) *DrawActionState {
+	return &DrawActionState{
 		playerID: player.ID(),
 		player:   player,
 	}
@@ -124,9 +124,8 @@ func solveDraw(board *model.Board, state logic.ActionState, deckType model.DeckT
 		slog.Warn("hand deck not found", "player", s.playerID)
 		return board, nil
 	}
-	card := (*deck)[len(*deck)-1]
-	*deck = (*deck)[:len(*deck)-1]
-	*hand = append(*hand, card)
+	card := deck.Draw()
+	hand.PushTop(model.Cards{card})
 	return next, logic.Summary{
 		"player_id": s.playerID.String(),
 		"card_id":   card.Id().String(),

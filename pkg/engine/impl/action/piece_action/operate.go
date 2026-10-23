@@ -170,6 +170,21 @@ func (e PieceOperateActionState) Value() int {
 	return e.value
 }
 
+func updatePiece(board *model.Board, state *PieceOperateActionState, mutate func(model.MutablePiece)) *model.Board {
+	if board == nil {
+		return nil
+	}
+	if _, ok := board.GetPiece(state.pieceID); !ok {
+		return board
+	}
+	next := board.Next()
+	piece, _ := next.GetPiece(state.pieceID)
+	mutable := piece.(model.MutablePiece)
+	mutate(mutable)
+	next.UpdatePiece(mutable)
+	return next
+}
+
 func (b basePieceHPAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if pieceState, ok := state.(*PieceOperateActionState); ok {
 		return &PieceHPContext{event.NewBaseEffectContext(), pieceState.value}, logic.Summary{"value": pieceState.value}
@@ -184,9 +199,7 @@ func (e PieceHPIncreaseAction) Solve(board *model.Board, state logic.ActionState
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetHP(pieceState.piece.HP() + context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetHP(piece.HP() + context.Value) })
 	return board, logic.Summary{"delta_hp": context.Value}
 }
 
@@ -196,9 +209,7 @@ func (e PieceHPDecreaseAction) Solve(board *model.Board, state logic.ActionState
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetHP(pieceState.piece.HP() - context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetHP(piece.HP() - context.Value) })
 	return board, logic.Summary{"delta_hp": -context.Value}
 }
 
@@ -208,9 +219,7 @@ func (e PieceHPFixAction) Solve(board *model.Board, state logic.ActionState, c l
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetHP(context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetHP(context.Value) })
 	return board, logic.Summary{"set_hp": context.Value}
 }
 
@@ -228,9 +237,7 @@ func (e PieceMPIncreaseAction) Solve(board *model.Board, state logic.ActionState
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetMP(pieceState.piece.MP() + context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetMP(piece.MP() + context.Value) })
 	return board, logic.Summary{"delta_mp": context.Value}
 }
 
@@ -240,9 +247,7 @@ func (e PieceMPDecreaseAction) Solve(board *model.Board, state logic.ActionState
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetMP(pieceState.piece.MP() - context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetMP(piece.MP() - context.Value) })
 	return board, logic.Summary{"delta_mp": -context.Value}
 }
 
@@ -252,9 +257,7 @@ func (e PieceMPFixAction) Solve(board *model.Board, state logic.ActionState, c l
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetMP(context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetMP(context.Value) })
 	return board, logic.Summary{"set_mp": context.Value}
 }
 
@@ -272,9 +275,7 @@ func (e PieceATKIncreaseAction) Solve(board *model.Board, state logic.ActionStat
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetATK(pieceState.piece.ATK() + context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetATK(piece.ATK() + context.Value) })
 	return board, logic.Summary{"delta_atk": context.Value}
 }
 
@@ -284,9 +285,7 @@ func (e PieceATKDecreaseAction) Solve(board *model.Board, state logic.ActionStat
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetATK(pieceState.piece.ATK() - context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetATK(piece.ATK() - context.Value) })
 	return board, logic.Summary{"delta_atk": -context.Value}
 }
 
@@ -296,8 +295,6 @@ func (e PieceATKFixAction) Solve(board *model.Board, state logic.ActionState, c 
 		slog.Warn("CastStateContext failed.")
 		return board, nil
 	}
-	board = board.Next()
-	pieceState.piece.SetATK(context.Value)
-	board.UpdatePiece(pieceState.piece)
+	board = updatePiece(board, pieceState, func(piece model.MutablePiece) { piece.SetATK(context.Value) })
 	return board, logic.Summary{"set_atk": context.Value}
 }

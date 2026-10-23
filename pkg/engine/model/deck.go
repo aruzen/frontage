@@ -10,7 +10,11 @@ type Cards []Card
 
 func (cs *Cards) Copy() Cards {
 	dst := make(Cards, len(*cs))
-	copy(dst, *cs)
+	for i, card := range *cs {
+		if card != nil {
+			dst[i] = card.CardCopy()
+		}
+	}
 	return dst
 }
 
@@ -295,10 +299,9 @@ func (cs *Cards) UnorderedSearchTop(pred func(Card) bool) (Card, bool) {
 	return nil, false
 }
 
-func (cs *Cards) Draw(rand rand.Rand) Card {
+func (cs *Cards) Draw() Card {
 	card := (*cs)[len(*cs)-1]
 	*cs = (*cs)[:len(*cs)-1]
-	cs.Shuffle(rand)
 	return card
 }
 

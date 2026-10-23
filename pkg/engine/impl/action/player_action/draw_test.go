@@ -44,7 +44,7 @@ func TestDrawMainDeckActionSolveMovesCard(t *testing.T) {
 	action := DrawMainDeckAction{}
 	state := NewDrawActionState(local)
 
-	next, summary := action.Solve(board, &state, &DrawActionContext{})
+	next, summary := action.Solve(board, state, &DrawActionContext{})
 	if next == nil {
 		t.Fatalf("expected next board")
 	}
@@ -75,7 +75,7 @@ func TestDrawSubDeckActionSolveMovesCard(t *testing.T) {
 	action := DrawSubDeckAction{}
 	state := NewDrawActionState(local)
 
-	next, summary := action.Solve(board, &state, &DrawActionContext{})
+	next, summary := action.Solve(board, state, &DrawActionContext{})
 	if next == nil {
 		t.Fatalf("expected next board")
 	}
@@ -110,7 +110,7 @@ func TestDrawActionEmptyDeckNoChange(t *testing.T) {
 
 	action := DrawMainDeckAction{}
 	state := NewDrawActionState(local)
-	next, summary := action.Solve(board, &state, &DrawActionContext{})
+	next, summary := action.Solve(board, state, &DrawActionContext{})
 	if next != board {
 		t.Fatalf("expected original board")
 	}

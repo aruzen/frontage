@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
+	"flag"
 	"frontage/internal/log"
 	"frontage/pkg/engine/impl/action"
 	action_register "frontage/pkg/engine/impl/action/register"
-	"frontage/pkg/engine/logic"
 	"frontage/pkg/network"
 	"frontage/pkg/network/controller"
 	"frontage/pkg/network/controller/pve"
@@ -19,14 +17,16 @@ import (
 	"frontage/pkg/network/translator"
 	"github.com/google/uuid"
 	"log/slog"
-	"net"
-	"reflect"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 type entryAndExitInfo struct {
 	id      uuid.UUID
 	isEntry bool
 	channel chan network.UnsolvedPacket
+	ctx     context.Context
 }
 
 var (
@@ -36,223 +36,61 @@ var (
 )
 
 type ServerInfo struct {
-	TLSEnabled bool
+	Addr        string
+	TLSEnabled  bool
+	TLSCertFile string
+	TLSKeyFile  string
 }
-
-var serverInfo ServerInfo
 
 func main() {
-	action_register.Init()
-	actionRepo = repository.NewActionRepository(func(tag logic.ModifyActionTag) logic.ModifyAction {
-		return action.FindActionModify(tag)
-	}, func(tag logic.EffectActionTag) logic.EffectAction {
-		return action.FindActionEffect(tag)
-	})
+	var info ServerInfo
+	flag.StringVar(&info.Addr, "addr", ":8275", "TCP listen address")
+	flag.StringVar(&info.TLSCertFile, "tls-cert", "", "TLS certificate file (requires -tls-key)")
+	flag.StringVar(&info.TLSKeyFile, "tls-key", "", "TLS private key file (requires -tls-cert)")
+	flag.Parse()
+	info.TLSEnabled = info.TLSCertFile != "" || info.TLSKeyFile != ""
 	log.Init(true)
-	// FIXME
-	serverInfo.TLSEnabled = true
-
-	systemCtx := context.Background()
-	systemCtx, systemFinish := context.WithCancel(systemCtx)
-	systemVisitPlayer := make(chan entryAndExitInfo)
-	lobbyVisitPlayer := make(chan entryAndExitInfo)
-	go systemLoop(systemCtx, systemVisitPlayer)
-	go lobbyLoop(systemCtx, lobbyVisitPlayer)
-
-	var listener net.Listener
-	if serverInfo.TLSEnabled {
-		var err error
-		listener, err = tls.Listen("tcp", ":443", &tls.Config{ /* certs */ })
-		if err != nil {
-			slog.Error("Failed to listen TSL", "err", err)
-		}
-	} else {
-		addr, err := net.ResolveTCPAddr("udp", ":8275")
-		if err != nil {
-			slog.Error("Failed to resolve TCP address", "err", err)
-			return
-		}
-		listener, err = net.ListenTCP("tcp", addr)
-		if err != nil {
-			slog.Error("Failed to listen TCP", "err", err)
-			return
-		}
-	}
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			return
-		}
-		go receive(systemCtx, conn, systemVisitPlayer, lobbyVisitPlayer)
-	}
-	systemFinish()
-}
-
-func receive(ctx context.Context, conn net.Conn, systemVisitPlayer, lobbyVisitPlayer chan entryAndExitInfo) {
-	defer func(conn net.Conn) {
-		err := conn.Close()
-		if err != nil {
-			slog.Error("Failed to close TCP connection", "err", err)
-		}
-	}(conn)
-	id, err := uuid.NewUUID()
+	action_register.Init()
+	actionRepo = repository.NewActionRepository(action.FindActionModify, action.FindActionEffect)
+	listener, err := newListener(info)
 	if err != nil {
-		slog.Error("Failed to generate UUID", "err", err)
-	}
-	repository.AddConnection(id, conn)
-	defer repository.RemoveConnection(id)
-
-	systemChan := make(chan network.UnsolvedPacket)
-	lobbyChan := make(chan network.UnsolvedPacket)
-	gameChan := make(chan network.UnsolvedPacket)
-	systemVisitPlayer <- entryAndExitInfo{
-		id:      id,
-		isEntry: true,
-		channel: systemChan,
-	}
-	lobbyVisitPlayer <- entryAndExitInfo{
-		id:      id,
-		isEntry: true,
-		channel: lobbyChan,
-	}
-	barrierGameChan := repository.AddGameChannel(id, gameChan)
-	defer func() {
-		systemVisitPlayer <- entryAndExitInfo{
-			id:      id,
-			isEntry: false,
-			channel: nil,
-		}
-		lobbyVisitPlayer <- entryAndExitInfo{
-			id:      id,
-			isEntry: false,
-			channel: nil,
-		}
-		repository.RemoveGameChannel(id)
-	}()
-	err = controller.ReceiveLoop(ctx, conn, systemChan, lobbyChan, barrierGameChan)
-	if err != nil {
-		slog.Error("Failed to receive loop packet", "err", err)
+		slog.Error("Failed to start server", "err", err)
 		return
+	}
+	defer listener.Close()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	if err := serve(ctx, listener); err != nil {
+		slog.Error("Server stopped", "err", err)
 	}
 }
 
 func systemLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
 	handlers := controller.SystemPacketHandlers{}
-
-	cases := make([]reflect.SelectCase, 2)
-	ids := make([]uuid.UUID, 2)
-	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
-	ids[0] = uuid.Nil
-	cases[1] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(visitChan)}
-	ids[1] = uuid.Nil
-
-system_finish:
-	for {
-		idx, val, ok := reflect.Select(cases)
-		if !ok {
-			continue
-		}
-		switch idx {
-		case 0:
-			break system_finish
-		case 1:
-			visit := val.Interface().(entryAndExitInfo)
-			if !visit.isEntry {
-				cases = append(cases[:idx], cases[idx+1:]...)
-				ids = append(ids[:idx], ids[idx+1:]...)
-			} else {
-				if visit.channel == nil {
-					slog.Warn("Visit channel is nil", "id", visit.id)
-					continue
-				}
-				cases = append(cases, reflect.SelectCase{
-					Dir:  reflect.SelectRecv,
-					Chan: reflect.ValueOf(visit.channel),
-				})
-				ids = append(ids, visit.id)
-			}
-		default:
-			packet := val.Interface().(network.UnsolvedPacket)
-			id := ids[idx]
-			if id == uuid.Nil {
-				slog.Error("Invalid packet id", "id", id)
-				continue
-			}
-			err := controller.DispatchSystemPacket(handlers, packet.Tag, id, packet.Body)
-			if err != nil {
-				slog.Error("Failed to dispatch system packet", "err", err)
-				return
-			}
-		}
-		fmt.Println("index:", idx, "value:", val.Interface())
-	}
+	packetLoop(ctx, visitChan, func(_ context.Context, id uuid.UUID, packet network.UnsolvedPacket) error {
+		return controller.DispatchSystemPacket(handlers, packet.Tag, id, packet.Body)
+	}, nil)
 }
 
 func lobbyLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
 	handlers := controller.LobbyPacketHandlers{
 		MatchMake: lobby_handler.NewMatchMakeHandler(
-			lobby_service.NewMatchMakeService(
-				matchRepo,
-				pvp.RequireContents{
-					cardRepo,
-				},
+			lobby_service.NewMatchMakeService(matchRepo,
+				pvp.RequireContents{CardRepo: cardRepo},
 				pve.RequireContents{
-					actionRepo,
-					cardRepo,
-					game_dispatcher.NewActEventDispatcher(
+					ActionRepo: actionRepo,
+					CardRepo:   cardRepo,
+					ActEventDisp: game_dispatcher.NewActEventDispatcher(
 						translator.NewActionResultTranslator(actionRepo),
 						translator.NewActionSummaryTranslator(actionRepo)),
-					game_dispatcher.NewGameInitializeDispatcher(),
-				}),
-			matchRepo),
+					GameInitDisp: game_dispatcher.NewGameInitializeDispatcher(),
+				}), matchRepo),
 	}
-
-	cases := make([]reflect.SelectCase, 2)
-	ids := make([]uuid.UUID, 2)
-	cases[0] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())}
-	ids[0] = uuid.Nil
-	cases[1] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(visitChan)}
-	ids[1] = uuid.Nil
-
-system_finish:
-	for {
-		idx, val, ok := reflect.Select(cases)
-		if !ok {
-			continue
+	packetLoop(ctx, visitChan, func(playerCtx context.Context, id uuid.UUID, packet network.UnsolvedPacket) error {
+		return controller.DispatchLobbyPacketContext(playerCtx, handlers, packet.Tag, id, packet.Body)
+	}, func(id uuid.UUID) {
+		if match, ok := matchRepo.FindByPlayerID(id); ok {
+			matchRepo.Remove(match)
 		}
-		switch idx {
-		case 0:
-			break system_finish
-		case 1:
-			visit := val.Interface().(entryAndExitInfo)
-			if !visit.isEntry {
-				cases = append(cases[:idx], cases[idx+1:]...)
-				ids = append(ids[:idx], ids[idx+1:]...)
-			} else {
-				if visit.channel == nil {
-					slog.Warn("Visit channel is nil", "id", visit.id)
-					continue
-				}
-				cases = append(cases, reflect.SelectCase{
-					Dir:  reflect.SelectRecv,
-					Chan: reflect.ValueOf(visit.channel),
-				})
-				ids = append(ids, visit.id)
-			}
-		default:
-			packet := val.Interface().(network.UnsolvedPacket)
-			id := ids[idx]
-			if id == uuid.Nil {
-				slog.Error("Invalid packet id", "id", id)
-				continue
-			}
-			err := controller.DispatchLobbyPacket(handlers, packet.Tag, id, packet.Body)
-			if err != nil {
-				slog.Error("Failed to dispatch system packet", "err", err)
-				return
-			}
-		}
-		fmt.Println("index:", idx, "value:", val.Interface())
-	}
+	})
 }

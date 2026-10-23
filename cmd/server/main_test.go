@@ -12,6 +12,7 @@ import (
 	"frontage/pkg/network"
 	"frontage/pkg/network/controller/pve"
 	"frontage/pkg/network/data"
+	"frontage/pkg/network/game_api"
 	"frontage/pkg/network/game_dispatcher"
 	"frontage/pkg/network/game_handler"
 	"frontage/pkg/network/lobby_api"
@@ -27,7 +28,9 @@ func TestLobbyMatchMakeSendsCompletePacket(t *testing.T) {
 	defer cancel()
 
 	visitChan := make(chan entryAndExitInfo)
-	go lobbyLoop(ctx, visitChan)
+	lobbyDone := make(chan struct{})
+	go func() { defer close(lobbyDone); lobbyLoop(ctx, visitChan) }()
+	defer func() { cancel(); <-lobbyDone }()
 
 	serverConn, clientConn := net.Pipe()
 	t.Cleanup(func() {
@@ -37,8 +40,10 @@ func TestLobbyMatchMakeSendsCompletePacket(t *testing.T) {
 
 	id := uuid.New()
 	repository.AddConnection(id, serverConn)
+	repository.AddGameChannel(id, make(chan network.UnsolvedPacket, 1))
 	t.Cleanup(func() {
 		repository.RemoveConnection(id)
+		repository.RemoveGameChannel(id)
 	})
 
 	lobbyChan := make(chan network.UnsolvedPacket, 1)
@@ -97,7 +102,8 @@ func TestPVEGameSendsActEventPacket(t *testing.T) {
 	t.Cleanup(func() {
 		repository.RemoveConnection(id)
 	})
-	repository.AddGameChannel(id, make(chan network.UnsolvedPacket, 1))
+	input := make(chan network.UnsolvedPacket, 1)
+	repository.AddGameChannel(id, input)
 	t.Cleanup(func() {
 		repository.RemoveGameChannel(id)
 	})
@@ -126,11 +132,22 @@ func TestPVEGameSendsActEventPacket(t *testing.T) {
 		return tag, body
 	}
 
+	ackSync := func(wantCause int) {
+		t.Helper()
+		tag, body := readPacket()
+		var packet game_api.SyncPacket
+		if tag != network.SYNC_PACKET_TAG || json.Unmarshal(body, &packet) != nil || packet.SyncCause != wantCause {
+			t.Fatalf("unexpected sync packet: tag=%d body=%s", tag, body)
+		}
+		input <- network.UnsolvedPacket{Tag: network.SYNC_PACKET_TAG, Body: body}
+	}
+	ackSync(game_api.SYNC_CAUSE_GAME_START)
 	tag, _ := readPacket()
 	if tag != network.GAME_INITIALIZE_PACKET_TAG {
 		t.Fatalf("unexpected init tag: got %d want %d", tag, network.GAME_INITIALIZE_PACKET_TAG)
 	}
 
+	ackSync(game_api.SYNC_CAUSE_INITIALIZE_END)
 	tag, body := readPacket()
 	if tag != network.ACT_EVENT_PACKET_TAG {
 		t.Fatalf("unexpected act event tag: got %d want %d", tag, network.ACT_EVENT_PACKET_TAG)

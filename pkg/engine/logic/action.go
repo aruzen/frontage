@@ -28,6 +28,12 @@ type ActionState interface {
 	FromMap(*model.Board, map[string]interface{}) error
 }
 
+// ActionStateCloner preserves references between nested states during simulation.
+// States without nested state references use their ToMap/FromMap representation.
+type ActionStateCloner interface {
+	CloneState(board *model.Board, clone func(ActionState) (ActionState, error)) (ActionState, error)
+}
+
 type Summary map[string]interface{}
 
 type SummaryType string

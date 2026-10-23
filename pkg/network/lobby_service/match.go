@@ -24,12 +24,29 @@ func NewMatchMakeService(matchRepo *repository.MatchRepository, pvp pvp.RequireC
 func (m MatchMakeService) MatchMake(ctx context.Context, id uuid.UUID, matchType data.MatchType) error {
 	switch matchType {
 	case data.PvE:
+		channel := repository.GetGameChannel(id)
+		if channel == nil || channel.Chan == nil {
+			return errors.New("game channel not found")
+		}
 		matchID := uuid.New()
 		if m.matchRepo != nil {
 			m.matchRepo.Insert(matchID, id, uuid.Nil)
 		}
-		go pve.Game(ctx, m.pveRepos, id, pve.DefaultGameInfo())
-		repository.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: matchID})
+		channel.Living.Store(true)
+		if !repository.SendPacket(id, lobby_api.CompleteMatchMakePacket{MatchID: matchID}) {
+			channel.Living.Store(false)
+			if m.matchRepo != nil {
+				m.matchRepo.Remove(matchID)
+			}
+			return errors.New("failed to send match confirmation")
+		}
+		go func() {
+			defer channel.Living.Store(false)
+			if m.matchRepo != nil {
+				defer m.matchRepo.Remove(matchID)
+			}
+			pve.Game(ctx, m.pveRepos, id, pve.DefaultGameInfo())
+		}()
 		return nil
 	case data.PvP:
 		return errors.New("pvp match not implemented")

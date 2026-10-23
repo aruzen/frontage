@@ -56,6 +56,10 @@ type TurnEndAction struct {
 func (TurnEndAction) Tag() EffectActionTag           { return TURN_END_ACTION_TAG }
 func (a TurnEndAction) LocalizeTag() pkg.LocalizeTag { return pkg.LocalizeTag(a.Tag()) }
 
+func (TurnEndAction) Solve(board *model.Board, _ ActionState, _ EffectContext) (*model.Board, Summary) {
+	return board.AdvanceTurn(), Summary{}
+}
+
 type PlayerWinAction struct {
 	systemNoticeAction
 }

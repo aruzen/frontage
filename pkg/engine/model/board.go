@@ -49,26 +49,43 @@ func NewBoard(info *BoardInfo, players [2]Player) *Board {
 	}
 }
 
+// Copy isolates mutable players, cards and pieces. Structure and skill definitions
+// are shared and must be immutable.
 func (b *Board) Copy() *Board {
-	return &Board{
-		info:           b.info,
-		turn:           b.turn,
-		side:           b.side,
-		players:        [2]Player{b.players[0].Copy(), b.players[1].Copy()},
-		structures:     pkg.Copy2D(b.info.size, b.structures),
-		structureTable: pkg.CopyMap(b.structureTable),
-		pieces:         pkg.Copy2D(b.info.size, b.pieces),
-		pieceTable:     pkg.CopyMap(b.pieceTable),
-	}
+	result := NewBoard(b.info, [2]Player{})
+	result.Overwrite(b)
+	return result
 }
 
 func (b *Board) Overwrite(src *Board) {
 	b.info = src.info
 	b.turn = src.turn
 	b.side = src.side
-	b.players[0] = src.players[0].Copy()
-	b.players[1] = src.players[1].Copy()
-	pkg.Overwrite2D(b.pieces, src.pieces)
+	for i, player := range src.players {
+		b.players[i] = nil
+		if player != nil {
+			b.players[i] = player.Copy()
+		}
+	}
+	if len(b.pieces) != src.info.size.Width || (len(b.pieces) > 0 && len(b.pieces[0]) != src.info.size.Height) {
+		b.pieces = pkg.Make2D[Piece](src.info.size, nil)
+		b.structures = pkg.Make2D[Structure](src.info.size, nil)
+	}
+	for x, column := range src.pieces {
+		for y, piece := range column {
+			b.pieces[x][y] = nil
+			if piece == nil {
+				continue
+			}
+			copied := piece.Copy()
+			if owner := piece.Owner(); owner != nil {
+				if player, ok := b.FindPlayer(owner.ID()); ok {
+					copied.SetOwner(player)
+				}
+			}
+			b.pieces[x][y] = copied
+		}
+	}
 	b.pieceTable = pkg.CopyMap(src.pieceTable)
 	pkg.Overwrite2D(b.structures, src.structures)
 	b.structureTable = pkg.CopyMap(src.structureTable)
@@ -86,17 +103,9 @@ func (b *Board) Sandbox() *Board {
 
 func (b *Board) Next() *Board {
 	if b.info.boardGenerationStrategy == GENERATION_STRATEGY_CHAIN || b.beforeGeneration == nil {
-		return &Board{
-			info:             b.info,
-			beforeGeneration: b,
-			turn:             b.turn,
-			side:             b.side,
-			players:          [2]Player{b.players[0].Copy(), b.players[1].Copy()},
-			structures:       pkg.Copy2D(b.info.size, b.structures),
-			structureTable:   pkg.CopyMap(b.structureTable),
-			pieces:           pkg.Copy2D(b.info.size, b.pieces),
-			pieceTable:       pkg.CopyMap(b.pieceTable),
-		}
+		result := b.Copy()
+		result.beforeGeneration = b
+		return result
 	} else if b.info.boardGenerationStrategy == GENERATION_STRATEGY_SWAP {
 		result := b.beforeGeneration
 		result.Overwrite(b)
@@ -271,7 +280,15 @@ func (b *Board) UpdatePiece(piece Piece) bool {
 }
 
 func (b *Board) ActivePlayer() Player {
-	return b.players[0]
+	return b.players[b.side]
+}
+
+// AdvanceTurn starts the other player's turn on a new board generation.
+func (b *Board) AdvanceTurn() *Board {
+	next := b.Next()
+	next.turn++
+	next.side = (next.side + 1) % len(next.players)
+	return next
 }
 
 func (b *Board) inBounds(pos pkg.Point) bool {

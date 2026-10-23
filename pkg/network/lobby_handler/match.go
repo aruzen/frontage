@@ -25,6 +25,10 @@ func NewMatchMakeHandler(service MatchMakeService, matchRepo *repository.MatchRe
 }
 
 func (h *MatchMakeHandler) ServePacket(id uuid.UUID, data []byte) error {
+	return h.ServePacketContext(context.Background(), id, data)
+}
+
+func (h *MatchMakeHandler) ServePacketContext(ctx context.Context, id uuid.UUID, data []byte) error {
 	_, found := h.matchRepo.FindByPlayerID(id)
 	if found {
 		// TODO 失敗パケットを送るべき
@@ -40,5 +44,5 @@ func (h *MatchMakeHandler) ServePacket(id uuid.UUID, data []byte) error {
 	default:
 		return fmt.Errorf("invalid match type: %d", packet.Type)
 	}
-	return h.service.MatchMake(context.Background(), id, packet.Type)
+	return h.service.MatchMake(ctx, id, packet.Type)
 }

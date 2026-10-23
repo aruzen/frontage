@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"frontage/pkg/network"
 	"frontage/pkg/network/lobby_handler"
 	"github.com/google/uuid"
@@ -11,12 +12,16 @@ type LobbyPacketHandlers struct {
 }
 
 func DispatchLobbyPacket(handlers LobbyPacketHandlers, tag network.PacketTag, id uuid.UUID, data []byte) error {
+	return DispatchLobbyPacketContext(context.Background(), handlers, tag, id, data)
+}
+
+func DispatchLobbyPacketContext(ctx context.Context, handlers LobbyPacketHandlers, tag network.PacketTag, id uuid.UUID, data []byte) error {
 	switch tag {
 	case network.WAIT_MATCH_MAKE_PACKET_TAG:
 		if handlers.MatchMake == nil {
 			return ErrMissingHandler
 		}
-		return handlers.MatchMake.ServePacket(id, data)
+		return handlers.MatchMake.ServePacketContext(ctx, id, data)
 	default:
 		return ErrUnsupportedPacketTag
 	}

@@ -108,6 +108,10 @@ func (es *EventSystem) Chain(event Event) {
 		return
 	}
 	prevActive := es.active
+	if invalidEventLink(prevActive, event) {
+		slog.Warn("reused or cyclic event chain rejected")
+		return
+	}
 	defer func() { es.active = prevActive }()
 	base := event.base()
 	base.parent = prevActive
@@ -129,6 +133,10 @@ func (es *EventSystem) Chain(event Event) {
 
 func (es *EventSystem) ChainLine(event Event, pending ...Event) {
 	prevActive := es.active
+	if invalidEventLink(prevActive, event) {
+		slog.Warn("reused or cyclic event chain rejected")
+		return
+	}
 	defer func() { es.active = prevActive }()
 	base := event.base()
 	base.parent = prevActive
@@ -149,6 +157,19 @@ func (es *EventSystem) ChainLine(event Event, pending ...Event) {
 	if pending != nil && len(pending) > 0 {
 		es.ChainLine(pending[0], pending[1:]...)
 	}
+}
+
+func invalidEventLink(parent, child Event) bool {
+	// Events are tree nodes; each node can be attached to only one parent.
+	if child == nil || child.Parent() != nil {
+		return true
+	}
+	for current := parent; current != nil; current = current.Parent() {
+		if current == child {
+			return true
+		}
+	}
+	return false
 }
 
 func IntegrityCheck(a Action, state ActionState) bool {

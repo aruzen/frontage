@@ -17,10 +17,10 @@ func NewTurnEndDispatcher() *TurnEndDispatcher {
 	return &TurnEndDispatcher{}
 }
 
-func (d *TurnStartDispatcher) DispatchPacket(turn int) (network.Packet, error) {
-	return game_api.TurnStartPacket{Turn: turn}, nil
+func (d *TurnStartDispatcher) DispatchPacket(packet game_api.TurnStartPacket) (network.Packet, error) {
+	return packet, nil
 }
 
-func (d *TurnEndDispatcher) DispatchPacket(turn int) (network.Packet, error) {
-	return game_api.TurnEndPacket{Turn: turn}, nil
+func (d *TurnEndDispatcher) DispatchPacket(packet game_api.TurnEndPacket) (network.Packet, error) {
+	return packet, nil
 }

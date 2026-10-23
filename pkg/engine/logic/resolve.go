@@ -108,12 +108,15 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 
 	context, tmpSummary := e.action.Act(e.State(), beforeEffect, beforeContext)
 	appendSummary(&summaries, e.action, SUMMARY_TYPE_ACT, tmpSummary)
+	if isNil(context) {
+		return
+	}
 
 	if e.modifier != nil && IntegrityCheck(e.modifier.action, e.modifier.state) {
 		context = e.modifier.Resolve(es, e.action, context, &summaries)
 	}
 
-	if context == nil || context.IsCanceled() {
+	if isNil(context) || context.IsCanceled() {
 		return
 	}
 
@@ -143,6 +146,9 @@ func (e *ModifyEvent) Resolve(es *EventSystem, effect EffectAction, context Effe
 	}
 	context, tmpSummary := e.action.Modify(e.state, context)
 	appendSummary(summaries, e.action, SUMMARY_TYPE_MODIFY, tmpSummary)
+	if isNil(context) {
+		return nil
+	}
 
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, branch.state) {

@@ -129,11 +129,8 @@ func (c *PieceMoveActionContext) FromMap(m map[string]interface{}) error {
 		return fmt.Errorf("point: %w", err)
 	}
 	c.Point = p
-	cost, err := pkg.ToInt(m["action_cost"])
-	if err == nil {
-		c.ActionCost = cost
-	}
-	return nil
+	c.ActionCost, err = actionCostFromMap(m)
+	return err
 }
 
 func (c PieceAttackActionContext) ToMap() map[string]interface{} {
@@ -157,10 +154,20 @@ func (c *PieceAttackActionContext) FromMap(m map[string]interface{}) error {
 	if err != nil {
 		return fmt.Errorf("value: %w", err)
 	}
-	if cost, err := pkg.ToInt(m["action_cost"]); err == nil {
-		c.ActionCost = cost
+	c.ActionCost, err = actionCostFromMap(m)
+	return err
+}
+
+func actionCostFromMap(m map[string]interface{}) (int, error) {
+	value, ok := m["action_cost"]
+	if !ok {
+		return 0, nil
 	}
-	return nil
+	cost, err := pkg.ToInt(value)
+	if err != nil {
+		return 0, fmt.Errorf("action_cost: %w", err)
+	}
+	return cost, nil
 }
 
 // State mapping helpers
@@ -218,8 +225,9 @@ func (s *PieceMoveActionState) FromMap(b *model.Board, m map[string]interface{})
 	}
 	s.from = from
 	s.to = to
-	if cost, err := pkg.ToInt(m["action_cost"]); err == nil {
-		s.actionCost = cost
+	s.actionCost, err = actionCostFromMap(m)
+	if err != nil {
+		return err
 	}
 
 	if b != nil {
@@ -262,8 +270,9 @@ func (s *PieceAttackActionState) FromMap(b *model.Board, m map[string]interface{
 		return fmt.Errorf("value: %w", err)
 	}
 	s.value = num
-	if cost, err := pkg.ToInt(m["action_cost"]); err == nil {
-		s.actionCost = cost
+	s.actionCost, err = actionCostFromMap(m)
+	if err != nil {
+		return err
 	}
 	/* これはSolve時にのみ必要なのでResultに関係ない
 	if mm, ok := m["decrease_hp_state"].(map[string]interface{}); ok {

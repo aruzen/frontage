@@ -25,6 +25,7 @@ func (s PieceOperateActionState) ToMap() map[string]interface{} {
 }
 
 func (s *PieceOperateActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	s.piece = nil
 	var err error
 	s.pieceID, err = pkg.ToUUID(m["piece_id"])
 	if err != nil {

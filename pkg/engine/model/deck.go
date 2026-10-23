@@ -102,6 +102,7 @@ func (cs *Cards) RemoveCards(targets Cards) (int, bool) {
 			if (*cs)[i] == t {
 				(*cs) = append((*cs)[:i], (*cs)[i+1:]...)
 				count++
+				break
 			}
 		}
 	}
@@ -181,6 +182,7 @@ func (cs *Cards) UnorderdRemoveCards(targets Cards) (int, bool) {
 				(*cs)[i] = (*cs)[len(*cs)-1]
 				*cs = (*cs)[:len(*cs)-1]
 				count++
+				break
 			}
 		}
 	}

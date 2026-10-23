@@ -64,8 +64,9 @@ func (s *PieceAttackActionState) CloneState(board *model.Board, clone func(logic
 
 type PieceSummonActionContext struct {
 	event.BaseEffectContext
-	Point pkg.Point
-	Piece model.Piece
+	Point   pkg.Point
+	Piece   model.Piece
+	PieceID uuid.UUID
 }
 
 type PieceMoveActionContext struct {
@@ -86,11 +87,15 @@ func (c PieceSummonActionContext) ToMap() map[string]interface{} {
 	result["point"] = pkg.PointToMap(c.Point)
 	if c.Piece != nil {
 		result["piece_id"] = c.Piece.Id().String()
+	} else if c.PieceID != uuid.Nil {
+		result["piece_id"] = c.PieceID.String()
 	}
 	return result
 }
 
 func (c *PieceSummonActionContext) FromMap(m map[string]interface{}) error {
+	c.Piece = nil
+	c.PieceID = uuid.Nil
 	if err := c.BaseEffectContext.FromMap(m); err != nil {
 		return err
 	}
@@ -99,6 +104,12 @@ func (c *PieceSummonActionContext) FromMap(m map[string]interface{}) error {
 		return fmt.Errorf("point: %w", err)
 	}
 	c.Point = p
+	if value, ok := m["piece_id"]; ok {
+		c.PieceID, err = pkg.ToUUID(value)
+		if err != nil {
+			return fmt.Errorf("piece_id: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -295,21 +306,25 @@ func (a PieceInvasionAction) LocalizeTag() pkg.LocalizeTag { return pkg.Localize
 
 func (e PieceSummonAction) Act(state logic.ActionState, beforeAction logic.EffectAction, beforeContext logic.EffectContext) (logic.EffectContext, logic.Summary) {
 	if s, ok := state.(*PieceSummonActionState); ok {
-		return &PieceSummonActionContext{event.BaseEffectContext{}, s.point, s.piece}, logic.Summary{"point": pkg.PointToMap(s.point)}
+		return &PieceSummonActionContext{Point: s.point, Piece: s.piece, PieceID: s.pieceID}, logic.Summary{"point": pkg.PointToMap(s.point)}
 	}
 	return nil, nil
 }
 
 func (e PieceSummonAction) Solve(board *model.Board, state logic.ActionState, context logic.EffectContext) (*model.Board, logic.Summary) {
 	_, c, ok := e.CastStateContext(state, context)
-	if !ok {
+	if !ok || board == nil {
+		return board, nil
+	}
+	source := c.Piece
+	if source == nil && c.PieceID != uuid.Nil {
+		source, _ = board.GetPiece(c.PieceID)
+	}
+	if source == nil {
 		return board, nil
 	}
 	next := board.Next()
-	if c.Piece == nil {
-		return board, nil
-	}
-	piece := c.Piece.Copy()
+	piece := source.Copy()
 	if owner := piece.Owner(); owner != nil {
 		if player, ok := next.FindPlayer(owner.ID()); ok {
 			piece.SetOwner(player)

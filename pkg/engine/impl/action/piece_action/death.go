@@ -101,15 +101,16 @@ func (e PieceDeathAction) Solve(board *model.Board, state logic.ActionState, con
 	if !ok || board == nil {
 		return board, nil
 	}
-	next := board.Next()
 	if s.pieceID != uuid.Nil {
-		if piece, ok := next.GetPiece(s.pieceID); ok {
-			_ = next.RemovePiece(piece.Position())
-		} else {
-			_ = next.RemovePiece(s.point)
+		piece, exists := board.GetPiece(s.pieceID)
+		if !exists {
+			return board, nil
 		}
+		next := board.Next()
+		_ = next.RemovePiece(piece.Position())
 		return next, logic.Summary{"piece_id": s.pieceID.String()}
 	}
+	next := board.Next()
 	_ = next.RemovePiece(s.point)
 	return next, logic.Summary{"point": pkg.PointToMap(s.point)}
 }

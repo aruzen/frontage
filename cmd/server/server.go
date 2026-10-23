@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"log/slog"
 	"net"
-	"reflect"
 	"sync"
 )
 
@@ -99,66 +98,52 @@ func receive(ctx context.Context, conn net.Conn, systemVisit, lobbyVisit chan en
 
 func packetLoop(ctx context.Context, visitChan chan entryAndExitInfo,
 	dispatch func(context.Context, uuid.UUID, network.UnsolvedPacket) error, onExit func(uuid.UUID)) {
-	cases := []reflect.SelectCase{
-		{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())},
-		{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(visitChan)},
-	}
-	visitors := make([]entryAndExitInfo, 2)
-	remove := func(idx int) {
-		if onExit != nil {
-			onExit(visitors[idx].id)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	workers := make(map[uuid.UUID]*packetWorker)
+	completed := make(chan *packetWorker)
+	remove := func(worker *packetWorker) {
+		if workers[worker.visit.id] != worker {
+			return
 		}
-		cases = append(cases[:idx], cases[idx+1:]...)
-		visitors = append(visitors[:idx], visitors[idx+1:]...)
+		delete(workers, worker.visit.id)
+		worker.cancel()
+		if onExit != nil {
+			onExit(worker.visit.id)
+		}
 	}
 	defer func() {
-		for len(visitors) > 2 {
-			remove(len(visitors) - 1)
+		for _, worker := range workers {
+			remove(worker)
 		}
 	}()
 	for {
-		idx, value, ok := reflect.Select(cases)
-		switch idx {
-		case 0:
+		select {
+		case <-ctx.Done():
 			return
-		case 1:
+		case worker := <-completed:
+			remove(worker)
+		case visit, ok := <-visitChan:
 			if !ok {
 				return
 			}
-			visit := value.Interface().(entryAndExitInfo)
-			found := -1
-			for i := 2; i < len(visitors); i++ {
-				if visitors[i].id == visit.id {
-					found = i
-					break
-				}
-			}
 			if !visit.isEntry {
-				if found >= 0 {
-					remove(found)
+				if worker := workers[visit.id]; worker != nil {
+					remove(worker)
 				}
 				continue
 			}
-			if visit.channel == nil || found >= 0 {
+			if visit.channel == nil || workers[visit.id] != nil {
 				continue
 			}
 			if visit.ctx == nil {
 				visit.ctx = ctx
 			}
-			cases = append(cases, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(visit.channel)})
-			visitors = append(visitors, visit)
-		default:
-			if !ok {
-				remove(idx)
-				continue
-			}
-			visit := visitors[idx]
-			if visit.ctx.Err() != nil {
-				continue
-			}
-			if err := dispatch(visit.ctx, visit.id, value.Interface().(network.UnsolvedPacket)); err != nil {
-				slog.Warn("Failed to dispatch packet", "id", visit.id, "err", err)
-			}
+			workerCtx, workerCancel := context.WithCancel(visit.ctx)
+			worker := &packetWorker{visit: visit, ctx: workerCtx, cancel: workerCancel,
+				stop: context.AfterFunc(ctx, workerCancel)}
+			workers[visit.id] = worker
+			go runPacketWorker(ctx, worker, completed, dispatch)
 		}
 	}
 }

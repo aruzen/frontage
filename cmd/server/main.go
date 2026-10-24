@@ -73,9 +73,10 @@ func systemLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
 }
 
 func lobbyLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
+	matches := matchRepo
 	handlers := controller.LobbyPacketHandlers{
 		MatchMake: lobby_handler.NewMatchMakeHandler(
-			lobby_service.NewMatchMakeService(matchRepo,
+			lobby_service.NewMatchMakeService(matches,
 				pvp.RequireContents{CardRepo: cardRepo},
 				pve.RequireContents{
 					ActionRepo: actionRepo,
@@ -84,13 +85,13 @@ func lobbyLoop(ctx context.Context, visitChan chan entryAndExitInfo) {
 						translator.NewActionResultTranslator(actionRepo),
 						translator.NewActionSummaryTranslator(actionRepo)),
 					GameInitDisp: game_dispatcher.NewGameInitializeDispatcher(),
-				}), matchRepo),
+				}), matches),
 	}
 	packetLoop(ctx, visitChan, func(playerCtx context.Context, id uuid.UUID, packet network.UnsolvedPacket) error {
 		return controller.DispatchLobbyPacketContext(playerCtx, handlers, packet.Tag, id, packet.Body)
 	}, func(id uuid.UUID) {
-		if match, ok := matchRepo.FindByPlayerID(id); ok {
-			matchRepo.Remove(match)
+		if match, ok := matches.FindByPlayerID(id); ok {
+			matches.Remove(match)
 		}
 	})
 }

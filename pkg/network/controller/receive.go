@@ -39,14 +39,19 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Uns
 			return err
 		}
 		var target chan network.UnsolvedPacket
+		var stopped <-chan struct{}
 		switch packetTag >> 14 {
 		case network.SystemPacketFlag:
 			target = systemChan
 		case network.LobbyPacketFlag:
 			target = lobbyChan
 		case network.GamePacketFlag:
-			if gameChan != nil && gameChan.Living.Load() {
-				target = gameChan.Chan
+			if gameChan != nil {
+				living, notification := gameChan.Living.Snapshot()
+				if living {
+					target = gameChan.Chan
+					stopped = notification
+				}
 			}
 		}
 		if target == nil {
@@ -55,6 +60,7 @@ func ReceiveLoop(ctx context.Context, conn net.Conn, systemChan chan network.Uns
 		packet := network.UnsolvedPacket{Tag: packetTag, Body: append([]byte(nil), body...)}
 		select {
 		case target <- packet:
+		case <-stopped:
 		case <-ctx.Done():
 			return ctx.Err()
 		}

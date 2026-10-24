@@ -301,7 +301,11 @@ func (cs *Cards) UnorderedSearchTop(pred func(Card) bool) (Card, bool) {
 	return nil, false
 }
 
+// Draw returns nil when the deck is empty.
 func (cs *Cards) Draw() Card {
+	if len(*cs) == 0 {
+		return nil
+	}
 	card := (*cs)[len(*cs)-1]
 	*cs = (*cs)[:len(*cs)-1]
 	return card

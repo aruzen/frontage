@@ -25,6 +25,9 @@ func (cs *Cards) Shuffle(rand rand.Rand) {
 }
 
 func (cs Cards) Find(count uint, pred func(Card) bool) (Cards, bool) {
+	if count == 0 {
+		return nil, false
+	}
 	result := make(Cards, 0)
 	for _, card := range cs {
 		if pred(card) {
@@ -110,6 +113,9 @@ func (cs *Cards) RemoveCards(targets Cards) (int, bool) {
 }
 
 func (cs *Cards) Remove(require_count int, pred func(Card) bool) (int, bool) {
+	if require_count <= 0 {
+		return 0, false
+	}
 	count := 0
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {

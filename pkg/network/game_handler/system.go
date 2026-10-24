@@ -25,22 +25,22 @@ func NewTurnStartHandler() *TurnStartHandler {
 	return &TurnStartHandler{}
 }
 
-func (h *TurnStartHandler) ServePacket(data []byte) (int, error) {
+func (h *TurnStartHandler) ServePacket(data []byte) (game_api.TurnStartPacket, error) {
 	var packet game_api.TurnStartPacket
 	if err := json.Unmarshal(data, &packet); err != nil {
-		return 0, err
+		return game_api.TurnStartPacket{}, err
 	}
-	return packet.Turn, nil
+	return packet, nil
 }
 
 func NewTurnEndHandler() *TurnEndHandler {
 	return &TurnEndHandler{}
 }
 
-func (h *TurnEndHandler) ServePacket(data []byte) (int, error) {
+func (h *TurnEndHandler) ServePacket(data []byte) (game_api.TurnEndPacket, error) {
 	var packet game_api.TurnEndPacket
 	if err := json.Unmarshal(data, &packet); err != nil {
-		return 0, err
+		return game_api.TurnEndPacket{}, err
 	}
-	return packet.Turn, nil
+	return packet, nil
 }

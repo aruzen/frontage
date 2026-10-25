@@ -18,6 +18,11 @@ go run ./cmd/server -addr :8275 -tls-cert cert.pem -tls-key key.pem
 
 PvEは現在、メイン／サブデッキのドローとパスによるターン進行に対応しています。NPCはドローしてパスします。カード使用・スキル・複合ドローは実装途中です。クライアントはサーバーからの `SyncPacket` に同じ `sync_cause` を返してください。
 
+## PostgreSQL設計
+
+本番向けの保存構成・テーブル・トランザクション・導入順序は
+[PostgreSQL設計案](document/postgresql/README.md)を参照してください。設計確認用のDDLと検証SQLを含みます。
+
 ## 検証
 
 ```sh

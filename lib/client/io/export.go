@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	clientMu   sync.Mutex
-	clientConn net.Conn
+	clientMu     sync.Mutex
+	clientSendMu sync.Mutex
+	clientConn   net.Conn
 )
 
 func writeAll(conn net.Conn, data []byte) error {
@@ -74,6 +75,8 @@ func CloseClient() C.int {
 
 //export SendWaitMatchMake
 func SendWaitMatchMake(matchType C.int) C.int {
+	clientSendMu.Lock()
+	defer clientSendMu.Unlock()
 	clientMu.Lock()
 	conn := clientConn
 	clientMu.Unlock()

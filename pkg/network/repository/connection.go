@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"time"
 )
 
 var (
@@ -42,7 +43,17 @@ func RemoveConnection(id uuid.UUID) {
 	delete(connectionTable, id)
 }
 
+const DefaultWriteTimeout = 30 * time.Second
+
 func SendPacket(id uuid.UUID, h network.Packet) bool {
+	return SendPacketWithTimeout(id, h, DefaultWriteTimeout)
+}
+
+// SendPacketWithTimeout bounds the complete frame write after acquiring its lock.
+func SendPacketWithTimeout(id uuid.UUID, h network.Packet, timeout time.Duration) bool {
+	if timeout <= 0 {
+		return false
+	}
 	connection := GetConnection(id)
 	if connection == nil {
 		return false
@@ -56,6 +67,10 @@ func SendPacket(id uuid.UUID, h network.Packet) bool {
 	binary.LittleEndian.PutUint32(header[2:6], uint32(len(body)))
 	connection.Mtx.Lock()
 	defer connection.Mtx.Unlock()
+	if err := connection.Conn.SetWriteDeadline(time.Now().Add(timeout)); err != nil {
+		return false
+	}
+	defer connection.Conn.SetWriteDeadline(time.Time{})
 	writeAll := func(data []byte) bool {
 		for len(data) > 0 {
 			written, err := connection.Conn.Write(data)
@@ -70,9 +85,11 @@ func SendPacket(id uuid.UUID, h network.Packet) bool {
 		return true
 	}
 	if !writeAll(header) {
+		_ = connection.Conn.Close()
 		return false
 	}
 	if !writeAll(body) {
+		_ = connection.Conn.Close()
 		return false
 	}
 	return true

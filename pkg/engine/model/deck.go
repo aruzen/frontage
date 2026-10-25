@@ -25,6 +25,9 @@ func (cs *Cards) Shuffle(rand rand.Rand) {
 }
 
 func (cs Cards) Find(count uint, pred func(Card) bool) (Cards, bool) {
+	if count == 0 {
+		return nil, false
+	}
 	result := make(Cards, 0)
 	for _, card := range cs {
 		if pred(card) {
@@ -39,7 +42,8 @@ func (cs Cards) Find(count uint, pred func(Card) bool) (Cards, bool) {
 }
 
 func (cs Cards) FindTop(pred func(Card) bool) (Card, bool) {
-	for _, card := range cs {
+	for i := len(cs) - 1; i >= 0; i-- {
+		card := cs[i]
 		if pred(card) {
 			return card, true
 		}
@@ -110,6 +114,9 @@ func (cs *Cards) RemoveCards(targets Cards) (int, bool) {
 }
 
 func (cs *Cards) Remove(require_count int, pred func(Card) bool) (int, bool) {
+	if require_count <= 0 {
+		return 0, false
+	}
 	count := 0
 	for i := len(*cs) - 1; i >= 0; i-- {
 		if pred((*cs)[i]) {
@@ -301,7 +308,11 @@ func (cs *Cards) UnorderedSearchTop(pred func(Card) bool) (Card, bool) {
 	return nil, false
 }
 
+// Draw returns nil when the deck is empty.
 func (cs *Cards) Draw() Card {
+	if len(*cs) == 0 {
+		return nil
+	}
 	card := (*cs)[len(*cs)-1]
 	*cs = (*cs)[:len(*cs)-1]
 	return card
@@ -312,7 +323,13 @@ func (cs *Cards) PushTop(cards Cards) {
 }
 
 func (cs *Cards) PushBottom(cards Cards) {
-	*cs = append(cards, *cs...)
+	if len(cards) == 0 {
+		return
+	}
+	next := make(Cards, len(cards)+len(*cs))
+	copy(next, cards)
+	copy(next[len(cards):], *cs)
+	*cs = next
 }
 
 func (cs *Cards) Replace(target Card, value Card) bool {

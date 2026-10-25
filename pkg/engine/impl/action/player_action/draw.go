@@ -27,6 +27,7 @@ func (s DrawActionState) ToMap() map[string]interface{} {
 }
 
 func (s *DrawActionState) FromMap(b *model.Board, m map[string]interface{}) error {
+	s.player = nil
 	id, err := pkg.ToUUID(m["player_id"])
 	if err != nil {
 		return err

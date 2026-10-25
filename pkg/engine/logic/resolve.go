@@ -120,8 +120,12 @@ func (e *EffectEvent) Resolve(es *EventSystem, beforeEffect EffectAction, before
 		return
 	}
 
-	es.Board, tmpSummary = e.action.Solve(es.Board, e.State(), context)
+	next, tmpSummary := e.action.Solve(es.Board, e.State(), context)
 	appendSummary(&summaries, e.action, SUMMARY_TYPE_SOLVE, tmpSummary)
+	if next == nil {
+		return
+	}
+	es.Board = next
 
 	for _, branch := range e.branch {
 		if !IntegrityCheck(branch.action, branch.state) {

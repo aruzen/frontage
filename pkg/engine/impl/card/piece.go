@@ -38,8 +38,8 @@ type BasePiece struct {
 func NewBasePiece(base *model.BaseCard, hp, mp, atk int, legalMoves, attackRanges []pkg.Point) *BasePiece {
 	return &BasePiece{
 		BaseCard:     *base,
-		legalMoves:   legalMoves,
-		attackRanges: attackRanges,
+		legalMoves:   append([]pkg.Point(nil), legalMoves...),
+		attackRanges: append([]pkg.Point(nil), attackRanges...),
 		hp:           hp,
 		mp:           mp,
 		atk:          atk,
